@@ -11,10 +11,10 @@
          :accessor hour-of
          :type integer)
    (minutes :initarg :minutes
-           :accessor minutes-of
-           :type integer)
+            :accessor minutes-of
+            :type integer)
    (seconds :initarg :seconds
-           :accessor seconds-of
+            :accessor seconds-of
             :type integer)))
 
 (defclass date (timestamp)
@@ -113,7 +113,7 @@
    (year-of timestamp)))
 
 (defun local-time->timestamp (local-time timestamp-class))
-  
+
 
 (defgeneric timestamp+ (timestamp amount unit))
 (defmethod timestamp+ ((timestamp timestamp) amount unit)
@@ -128,3 +128,37 @@
 
 (let ((day (make-instance 'date :day 1 :month 1 :year 2024)))
   (timestamp+ day 1 :day))
+
+(defmethod timestamp+ ((timestamp zoned-datetime) amount unit)
+  (let ((lt (local-time:timestamp+ (timestamp->local-time timestamp) amount unit
+                                   (timezone-of timestamp))))
+    (make-instance 'zoned-datetime
+                   :seconds (local-time:timestamp-second lt :timezone (timezone-of timestamp))
+                   :minutes (local-time:timestamp-minute lt :timezone (timezone-of timestamp))
+                   :hour (local-time:timestamp-hour lt :timezone (timezone-of timestamp))
+                   :day (local-time:timestamp-day lt :timezone (timezone-of timestamp))
+                   :month (local-time:timestamp-month lt :timezone (timezone-of timestamp))
+                   :year (local-time:timestamp-year lt :timezone (timezone-of timestamp))
+                   :timezone (timezone-of timestamp))))
+
+(let ((ts (make-instance 'zoned-datetime
+               :day 1
+               :month 1
+               :year 2024
+               :hour 1
+               :minutes 0
+               :seconds 0
+               :timezone (local-time:find-timezone-by-location-name "America/Argentina/Buenos_Aires"))))
+  (timestamp+ ts 1 :day))
+
+;; https://github.com/dlowe-net/local-time/issues/67
+(let ((ts (make-instance 'zoned-datetime
+               :day 30
+               :month 3
+               :year 2014
+               :hour 1
+               :minutes 0
+               :seconds 0
+               :timezone
+               (local-time:find-timezone-by-location-name "Europe/Stockholm"))))
+  (timestamp+ ts 1 :minute))
