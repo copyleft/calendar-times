@@ -111,6 +111,16 @@
    (day-of timestamp)
    (month-of timestamp)
    (year-of timestamp)))
+(defmethod timestamp->local-time ((timestamp zoned-datetime))
+  (local-time:encode-timestamp
+   0 (seconds-of timestamp)
+   (minutes-of timestamp)
+   (hour-of timestamp)
+   (day-of timestamp)
+   (month-of timestamp)
+   (year-of timestamp)
+   :timezone (timezone-of timestamp)))
+
 
 (defun local-time->timestamp (local-time timestamp-class))
 
@@ -141,37 +151,51 @@
                    :year (local-time:timestamp-year lt :timezone (timezone-of timestamp))
                    :timezone (timezone-of timestamp))))
 
-(defmethod timestamp+ ((timestamp zoned-datetime) amount unit)
-  (let ((lt (local-time:timestamp+ (timestamp->local-time timestamp) amount unit
-                                   (timezone-of timestamp))))
-    (make-instance 'zoned-datetime
-                   :seconds (local-time:timestamp-second lt)
-                   :minutes (local-time:timestamp-minute lt)
-                   :hour (local-time:timestamp-hour lt)
-                   :day (local-time:timestamp-day lt)
-                   :month (local-time:timestamp-month lt)
-                   :year (local-time:timestamp-year lt)
-                   :timezone (timezone-of timestamp))))
+(defparameter *ts*
+  (make-instance 'zoned-datetime
+                 :day 1
+                 :month 1
+                 :year 2024
+                 :hour 1
+                 :minutes 0
+                 :seconds 0
+                 :timezone (local-time:find-timezone-by-location-name "America/Argentina/Buenos_Aires")))
 
-(let ((ts (make-instance 'zoned-datetime
-               :day 1
-               :month 1
-               :year 2024
-               :hour 1
-               :minutes 0
-               :seconds 0
-               :timezone (local-time:find-timezone-by-location-name "America/Argentina/Buenos_Aires"))))
-  (timestamp+ ts 1 :hour))
+*ts*
+(local-time:timestamp+ (timestamp->local-time *ts*) 1 :hour)
+
+(let ((ts (local-time:encode-timestamp 0 0 0 1 1 1 2024 :timezone
+                                       (local-time:find-timezone-by-location-name "America/Argentina/Buenos_Aires"))))
+  (local-time:timestamp+ ts 1 :hour (local-time:find-timezone-by-location-name "America/Argentina/Buenos_Aires")))
 
 ;; https://github.com/dlowe-net/local-time/issues/67
 ;; play with hour between 1 and 2 and observe timezone
 (let ((ts (make-instance 'zoned-datetime
-               :day 30
-               :month 3
-               :year 2014
-               :hour 1
-               :minutes 0
-               :seconds 0
-               :timezone
-               (local-time:find-timezone-by-location-name "Europe/Stockholm"))))
-  (timestamp+ ts 1 :hour))
+                         :day 30
+                         :month 3
+                         :year 2014
+                         :hour 1
+                         :minutes 0
+                         :seconds 0
+                         :timezone
+                         (local-time:find-timezone-by-location-name "Europe/Stockholm"))))
+  (timestamp+ ts 60 :minute))
+
+(defgeneric timestamp-difference (t1 t2))
+
+(defmethod timestamp-difference (t1 t2)
+  (local-time:timestamp-difference
+   (timestamp->local-time t1)
+   (timestamp->local-time t2)))
+
+;; https://github.com/dlowe-net/local-time/issues/47
+
+(let ((at-four (make-instance 'zoned-datetime :seconds 0 :minutes 0
+                                              :hour 4 :day 30 :month 3 :year 2014
+                                              :timezone
+                                              (local-time:find-timezone-by-location-name "Europe/Stockholm")))
+      (at-one (make-instance 'zoned-datetime :seconds 0 :minutes 0
+                                             :hour 1 :day 30 :month 3 :year 2014
+                                             :timezone
+                                             (local-time:find-timezone-by-location-name "Europe/Stockholm"))))
+  (timestamp-difference at-four at-one))
