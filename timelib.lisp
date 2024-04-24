@@ -95,3 +95,36 @@
                :day 1
                :month 1
                :year 2024)
+
+(defgeneric timestamp-convert (timestamp class &rest args))
+
+(defmethod timestamp-convert ((timestamp local-datetime) (class (eql 'date)) &rest args)
+  (make-instance 'date
+                 :day (day-of timestamp)
+                 :month (month-of timestamp)
+                 :year (year-of timestamp)))
+
+(defgeneric timestamp->local-time (timestamp))
+(defmethod timestamp->local-time ((timestamp date))
+  (local-time:encode-timestamp
+   0 0 0 0
+   (day-of timestamp)
+   (month-of timestamp)
+   (year-of timestamp)))
+
+(defun local-time->timestamp (local-time timestamp-class))
+  
+
+(defgeneric timestamp+ (timestamp amount unit))
+(defmethod timestamp+ ((timestamp timestamp) amount unit)
+  (let ((lt (local-time:timestamp+ (timestamp->local-time timestamp) amount unit)))
+    (local-time->timestamp lt)))
+
+(defmethod timestamp+ ((timestamp date) amount unit)
+  (let ((lt (local-time:timestamp+ (timestamp->local-time timestamp) amount unit)))
+    (make-instance 'date :day (local-time:timestamp-day lt)
+                         :month (local-time:timestamp-month lt)
+                         :year (local-time:timestamp-year lt))))
+
+(let ((day (make-instance 'date :day 1 :month 1 :year 2024)))
+  (timestamp+ day 1 :day))
