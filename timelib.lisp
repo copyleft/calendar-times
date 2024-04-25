@@ -84,20 +84,6 @@
   (print-unreadable-object (timestamp stream :type t)
     (format-timestamp stream timestamp)))
 
-(make-instance 'zoned-datetime
-               :day 1
-               :month 1
-               :year 2024
-               :hour 1
-               :minutes 0
-               :seconds 0
-               :timezone (local-time:find-timezone-by-location-name "America/Argentina/Buenos_Aires"))
-
-(make-instance 'date
-               :day 1
-               :month 1
-               :year 2024)
-
 (defgeneric timestamp-convert (timestamp class &rest args))
 
 (defmethod timestamp-convert ((timestamp local-datetime) (class (eql 'date)) &rest args)
@@ -153,36 +139,6 @@
                    :year (local-time:timestamp-year lt :timezone (timezone-of timestamp))
                    :timezone (timezone-of timestamp))))
 
-(defparameter *ts*
-  (make-instance 'zoned-datetime
-                 :day 1
-                 :month 1
-                 :year 2024
-                 :hour 1
-                 :minutes 0
-                 :seconds 0
-                 :timezone (local-time:find-timezone-by-location-name "America/Argentina/Buenos_Aires")))
-
-*ts*
-(local-time:timestamp+ (timestamp->local-time *ts*) 1 :hour)
-
-(let ((ts (local-time:encode-timestamp 0 0 0 1 1 1 2024 :timezone
-                                       (local-time:find-timezone-by-location-name "America/Argentina/Buenos_Aires"))))
-  (local-time:timestamp+ ts 1 :hour (local-time:find-timezone-by-location-name "America/Argentina/Buenos_Aires")))
-
-;; https://github.com/dlowe-net/local-time/issues/67
-;; play with hour between 1 and 2 and observe timezone
-(let ((ts (make-instance 'zoned-datetime
-                         :day 30
-                         :month 3
-                         :year 2014
-                         :hour 1
-                         :minutes 0
-                         :seconds 0
-                         :timezone
-                         (local-time:find-timezone-by-location-name "Europe/Stockholm"))))
-  (timestamp+ ts 60 :minute))
-
 (defgeneric timestamp-difference (t1 t2))
 
 (defmethod timestamp-difference (t1 t2)
@@ -190,16 +146,3 @@
    (timestamp->local-time t1)
    (timestamp->local-time t2)))
 
-;; https://github.com/dlowe-net/local-time/issues/47
-
-(let ((at-four (make-instance 'zoned-datetime
-                              :seconds 0 :minutes 0
-                              :hour 4 :day 30 :month 3 :year 2014
-                              :timezone
-                              (local-time:find-timezone-by-location-name "Europe/Stockholm")))
-      (at-one (make-instance 'zoned-datetime
-                             :seconds 0 :minutes 0
-                             :hour 1 :day 30 :month 3 :year 2014
-                             :timezone
-                             (local-time:find-timezone-by-location-name "Europe/Stockholm"))))
-  (timestamp-difference at-four at-one))
