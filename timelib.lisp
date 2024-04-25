@@ -48,7 +48,9 @@
    (hour-of timestamp)
    (day-of timestamp)
    (month-of timestamp)
-   (year-of timestamp)))
+   (year-of timestamp)
+   :timezone timezone
+   :offset offset))
 
 (defun local-datetime->universal (timestamp &optional timezone offset)
   (local-time:timestamp-to-universal
@@ -128,7 +130,7 @@
 (defgeneric timestamp+ (timestamp amount unit))
 (defmethod timestamp+ ((timestamp timestamp) amount unit)
   (let ((lt (local-time:timestamp+ (timestamp->local-time timestamp) amount unit)))
-    (local-time->timestamp lt)))
+    (local-time->timestamp lt (class-of timestamp))))
 
 (defmethod timestamp+ ((timestamp date) amount unit)
   (let ((lt (local-time:timestamp+ (timestamp->local-time timestamp) amount unit)))
@@ -190,12 +192,14 @@
 
 ;; https://github.com/dlowe-net/local-time/issues/47
 
-(let ((at-four (make-instance 'zoned-datetime :seconds 0 :minutes 0
-                                              :hour 4 :day 30 :month 3 :year 2014
-                                              :timezone
-                                              (local-time:find-timezone-by-location-name "Europe/Stockholm")))
-      (at-one (make-instance 'zoned-datetime :seconds 0 :minutes 0
-                                             :hour 1 :day 30 :month 3 :year 2014
-                                             :timezone
-                                             (local-time:find-timezone-by-location-name "Europe/Stockholm"))))
+(let ((at-four (make-instance 'zoned-datetime
+                              :seconds 0 :minutes 0
+                              :hour 4 :day 30 :month 3 :year 2014
+                              :timezone
+                              (local-time:find-timezone-by-location-name "Europe/Stockholm")))
+      (at-one (make-instance 'zoned-datetime
+                             :seconds 0 :minutes 0
+                             :hour 1 :day 30 :month 3 :year 2014
+                             :timezone
+                             (local-time:find-timezone-by-location-name "Europe/Stockholm"))))
   (timestamp-difference at-four at-one))
