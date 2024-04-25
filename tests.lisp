@@ -36,7 +36,7 @@
 
 ;; https://github.com/dlowe-net/local-time/issues/67
 ;; play with hour between 1 and 2 and observe timezone
-(let ((ts (make-instance 'zoned-datetime
+(let ((ts (make-instance 'timelib::zoned-datetime
                          :day 30
                          :month 3
                          :year 2014
@@ -45,9 +45,9 @@
                          :seconds 0
                          :timezone
                          (local-time:find-timezone-by-location-name "Europe/Stockholm"))))
-  (timestamp+ ts 60 :minute))
+  (timelib::timestamp+ ts 60 :minute))
 
-(make-instance 'zoned-datetime
+(make-instance 'timelib::zoned-datetime
                :day 1
                :month 1
                :year 2024
@@ -56,7 +56,18 @@
                :seconds 0
                :timezone (local-time:find-timezone-by-location-name "America/Argentina/Buenos_Aires"))
 
-(make-instance 'date
+(make-instance 'timelib::date
                :day 1
                :month 1
                :year 2024)
+
+(make-instance 'timelib::walltime
+               :hour 1
+               :minutes 20
+               :seconds 20)
+
+(make-instance 'timelib::zoned-date
+               :day 1
+               :month 1
+               :year 2024
+               :timezone (local-time:find-timezone-by-location-name "America/Argentina/Buenos_Aires"))

@@ -32,12 +32,26 @@
   ((timezone :initarg :timezone
              :accessor timezone-of)))
 
+(defclass zoned-date (date)
+  ((timezone :initarg :timezone
+             :accessor timezone-of)))
+
+(defun walltime->local-time (timestamp)
+  (local-time:encode-timestamp
+   0
+   (seconds-of timestamp)
+   (minutes-of timestamp)
+   (hour-of timestamp)
+   1 1 1900
+   :timezone local-time:+utc-zone+))
+
 (defun date->local-time (timestamp)
   (local-time:encode-timestamp
    0 0 0 0
    (day-of timestamp)
    (month-of timestamp)
-   (year-of timestamp)))
+   (year-of timestamp)
+   :timezone local-time:+utc-zone+))
 
 (defun local-datetime->local-time (timestamp &optional (timezone local-time:*default-timezone*) offset)
   (check-type timestamp local-datetime)
@@ -78,7 +92,26 @@
   (local-time:format-timestring
    destination
    (date->local-time timestamp)
-   :format local-time:+iso-8601-date-format+))
+   :format local-time:+iso-8601-date-format+
+   :timezone local-time:+utc-zone+))
+
+(defparameter +zoned-date-format+
+  ;; 2008-11-18T02:32:00.586931+01:00
+  (append local-time:+iso-8601-date-format+ (list #\T) (list :gmt-offset-or-z)))
+
+(defmethod format-timestamp (destination (timestamp zoned-date) &rest args)
+  (local-time:format-timestring
+   destination
+   (date->local-time timestamp)
+   :timezone (timezone-of timestamp)
+   :format +zoned-date-format+))
+
+(defmethod format-timestamp (destination (timestamp walltime) &rest args)
+  (local-time:format-timestring
+   destination
+   (walltime->local-time timestamp)
+   :format local-time:+iso-8601-time-format+
+   :timezone local-time:+utc-zone+))
 
 (defmethod print-object ((timestamp timestamp) stream)
   (print-unreadable-object (timestamp stream :type t)
