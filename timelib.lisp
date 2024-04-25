@@ -142,8 +142,19 @@
    (year-of timestamp)
    :timezone (timezone-of timestamp)))
 
+(defun local-time->date (timestamp)
+  (make-instance 'date
+                 :year (local-time:timestamp-year timestamp)
+                 :month (local-time:timestamp-month timestamp)
+                 :day (local-time:timestamp-day timestamp)))
 
-(defun local-time->timestamp (local-time timestamp-class))
+(defun local-time->walltime (timestamp)
+  (make-instance 'walltime
+                 :hour (local-time:timestamp-hour timestamp)
+                 :minutes (local-time:timestamp-minute timestamp)
+                 :seconds (local-time:timestamp-second timestamp)))
+
+(defgeneric local-time->timestamp (local-time timestamp-class))
 
 
 (defgeneric timestamp+ (timestamp amount unit))

@@ -51,20 +51,44 @@
                              :timezone local-time:+utc-zone+))
 
 
-(defun local-time->date (local-time)
-  (let ((date (allocate-instance (find-class 'date))))
-    (setf (internal-timestamp date) local-time)
-    date))
-
 (defun parse-date (string)
   (local-time->date
-   (local-time:parse-timestring string :allow-missing-date-part t)))
+   (local-time:parse-timestring
+    string
+    :allow-missing-date-part nil
+    :allow-missing-time-part t
+    :allow-missing-timezone-part t)))
 
 (parse-date "2014-10-10")
 (parse-date "2014-10-11")
+
+(defun parse-walltime (string)
+  (local-time->walltime
+   (local-time:parse-timestring
+    string
+    :allow-missing-date-part t
+    :allow-missing-time-part nil
+    :allow-missing-timezone-part t)))
+
+(parse-walltime "03:24:34")
 
 (defun parse-zoned-datetime (string)
   (local-time->zoned-datetime
    (local-time:parse-timestring string :allow-missing-date-part nil
                                        :allow-missing-time-part nil
                                        :allow-missing-timezone-part nil)))
+
+(defgeneric parse-timestring (timestring class &rest args))
+
+(defmethod parse-timestring ((timestring string) (class (eql 'date)) &rest args)
+  (parse-date timestring))
+
+(parse-timestring "2014-10-10" 'date)
+
+(defmethod parse-timestring ((timestring string) (class (eql 'walltime)) &rest args)
+  (parse-walltime timestring))
+
+(defmethod parse-timestring ((timestring string) (class (eql 'time)) &rest args)
+  (parse-walltime timestring))
+
+(parse-timestring "01:00:22" 'time)
