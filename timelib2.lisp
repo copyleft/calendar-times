@@ -9,8 +9,8 @@
                                                                seconds
                                                                minutes hour day month year)
   #+nil(setf (internal-timestamp timestamp)
-        (local-time:encode-timestamp 0 seconds minutes hour day month year
-                                     :timezone local-time:+utc-zone+))
+             (local-time:encode-timestamp 0 seconds minutes hour day month year
+                                          :timezone local-time:+utc-zone+))
   )
 
 (defmethod initialize-instance :after ((timestamp date) &key day month year)
@@ -31,8 +31,8 @@
   )
 
 (defmethod initialize-instance :after ((timestamp local-datetime) &key
-                                                               seconds
-                                                               minutes hour day month year)
+                                                                    seconds
+                                                                    minutes hour day month year)
   (setf (internal-timestamp timestamp)
         (local-time:encode-timestamp 0 seconds minutes hour day month year
                                      :timezone local-time:+utc-zone+))
@@ -49,3 +49,22 @@
 (defmethod year-of ((timestamp date))
   (local-time:timestamp-year (internal-timestamp timestamp)
                              :timezone local-time:+utc-zone+))
+
+
+(defun local-time->date (local-time)
+  (let ((date (allocate-instance (find-class 'date))))
+    (setf (internal-timestamp date) local-time)
+    date))
+
+(defun parse-date (string)
+  (local-time->date
+   (local-time:parse-timestring string :allow-missing-date-part t)))
+
+(parse-date "2014-10-10")
+(parse-date "2014-10-11")
+
+(defun parse-zoned-datetime (string)
+  (local-time->zoned-datetime
+   (local-time:parse-timestring string :allow-missing-date-part nil
+                                       :allow-missing-time-part nil
+                                       :allow-missing-timezone-part nil)))
