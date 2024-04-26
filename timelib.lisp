@@ -272,3 +272,74 @@
 (let* ((d1 (make-instance 'zoned-datetime :year 2023 :timezone "America/Argentina/Buenos_Aires"))
        (d2 (clone-timestamp d1 :timezone "Europe/Stockholm")))
   (list d1 d2))
+
+(defgeneric timestamp-compare (t1 t2))
+
+(defmethod timestamp-compare ((t1 timestamp) (t2 timestamp))
+  (local-time::%timestamp-compare
+   (timestamp->local-time t1)
+   (timestamp->local-time t2)))
+
+(defgeneric timestamp= (t1 t2))
+(defmethod timestamp= ((t1 timestamp) (t2 timestamp))
+  (local-time:timestamp=
+   (timestamp->local-time t1)
+   (timestamp->local-time t2)))
+
+(timestamp-compare
+ (make-instance 'zoned-datetime :year 2023 :timezone "America/Argentina/Buenos_Aires")
+ (make-instance 'zoned-datetime :year 2023))
+
+(defun parse-date (string)
+  (destructuring-bind (year month day &rest args)
+      (local-time::%split-timestring string
+                                     :allow-missing-date-part nil
+                                     :allow-missing-time-part t
+                                     :allow-missing-timezone-part t)
+    (make-instance 'date :year year
+                         :month month
+                         :day day)))
+
+(parse-date "2014-10-10")
+(parse-date "2014-10-11")
+
+(defun parse-walltime (string)
+  (local-time->walltime
+   (local-time:parse-timestring
+    string
+    :allow-missing-date-part t
+    :allow-missing-time-part nil
+    :allow-missing-timezone-part t)))
+
+(parse-walltime "03:24:34")
+
+(defun parse-zoned-datetime (string)
+  (local-time->zoned-datetime
+   (local-time:parse-timestring string :allow-missing-date-part nil
+                                       :allow-missing-time-part nil
+                                       :allow-missing-timezone-part nil)))
+
+(defgeneric parse-timestring (timestring class &rest args))
+
+(defmethod parse-timestring ((timestring string) (class (eql 'date)) &rest args)
+  (parse-date timestring))
+
+(parse-timestring "2014-10-10" 'date)
+
+(defmethod parse-timestring ((timestring string) (class (eql 'walltime)) &rest args)
+  (parse-walltime timestring))
+
+(defmethod parse-timestring ((timestring string) (class (eql 'time)) &rest args)
+  (parse-walltime timestring))
+
+(parse-timestring "01:00:22" 'time)
+
+(let* ((d1 (make-date 2024 1 10))
+       (d2 (parse-date (format-timestamp nil d1))))
+  (list d1 d2 (timestamp-compare d1 d2)))
+
+(let* ((d1 (make-date 2024 1 10))
+       (d2 (parse-date (format-timestamp nil d1))))
+  (list d1 d2 (timestamp= d1 d2)))
+
+(parse-date (format-timestamp nil (make-date 2024 1 10)))
