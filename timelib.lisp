@@ -188,31 +188,48 @@
 (defgeneric local-time->timestamp (local-time timestamp-class))
 
 
-(defgeneric timestamp+ (timestamp amount unit))
-(defmethod timestamp+ ((timestamp timestamp) amount unit)
-  (let ((lt (local-time:timestamp+ (timestamp->local-time timestamp) amount unit)))
-    (local-time->timestamp lt (class-of timestamp))))
+(defgeneric timestamp+ (timestamp amount unit &rest more))
+(defmethod timestamp+ ((timestamp timestamp) amount unit &rest more)
+  (let* ((lt (local-time:timestamp+ (timestamp->local-time timestamp) amount unit))
+         (new-timestamp (local-time->timestamp lt (class-of timestamp))))
+    (if more
+        (apply #'timestamp+ new-timestamp (car more) (cadr more) (cddr more))
+        new-timestamp)))
 
-(defmethod timestamp+ ((timestamp date) amount unit)
-  (let ((lt (local-time:timestamp+ (timestamp->local-time timestamp) amount unit)))
-    (make-instance 'date :day (local-time:timestamp-day lt)
-                         :month (local-time:timestamp-month lt)
-                         :year (local-time:timestamp-year lt))))
+(defmethod timestamp+ ((timestamp date) amount unit &rest more)
+  (let* ((lt (local-time:timestamp+ (timestamp->local-time timestamp) amount unit))
+         (new-timestamp
+           (make-instance 'date :day (local-time:timestamp-day lt)
+                                :month (local-time:timestamp-month lt)
+                                :year (local-time:timestamp-year lt))))
+    (if more
+        (apply #'timestamp+ new-timestamp (car more) (cadr more) (cddr more))
+        new-timestamp)))
 
 (let ((day (make-instance 'date :day 1 :month 1 :year 2024)))
   (timestamp+ day 1 :day))
 
-(defmethod timestamp+ ((timestamp zoned-datetime) amount unit)
-  (let ((lt (local-time:timestamp+ (timestamp->local-time timestamp) amount unit
-                                   (timezone-of timestamp))))
-    (make-instance 'zoned-datetime
-                   :seconds (local-time:timestamp-second lt :timezone (timezone-of timestamp))
-                   :minutes (local-time:timestamp-minute lt :timezone (timezone-of timestamp))
-                   :hour (local-time:timestamp-hour lt :timezone (timezone-of timestamp))
-                   :day (local-time:timestamp-day lt :timezone (timezone-of timestamp))
-                   :month (local-time:timestamp-month lt :timezone (timezone-of timestamp))
-                   :year (local-time:timestamp-year lt :timezone (timezone-of timestamp))
-                   :timezone (timezone-of timestamp))))
+(let ((day (make-instance 'date :day 1 :month 1 :year 2024)))
+  (timestamp+ day 1 :day 2 :year))
+
+(defmethod timestamp+ ((timestamp zoned-datetime) amount unit &rest more)
+  (let* ((lt (local-time:timestamp+ (timestamp->local-time timestamp) amount unit
+                                    (timezone-of timestamp)))
+         (new-timestamp
+           (make-instance 'zoned-datetime
+                          :seconds (local-time:timestamp-second lt :timezone (timezone-of timestamp))
+                          :minutes (local-time:timestamp-minute lt :timezone (timezone-of timestamp))
+                          :hour (local-time:timestamp-hour lt :timezone (timezone-of timestamp))
+                          :day (local-time:timestamp-day lt :timezone (timezone-of timestamp))
+                          :month (local-time:timestamp-month lt :timezone (timezone-of timestamp))
+                          :year (local-time:timestamp-year lt :timezone (timezone-of timestamp))
+                          :timezone (timezone-of timestamp))))
+    (if more
+        (apply #'timestamp+ new-timestamp (car more) (cadr more) (cddr more))
+        new-timestamp)))
+
+(let ((day (make-instance 'zoned-datetime :day 1 :month 1 :year 2024)))
+  (timestamp+ day 1 :day 2 :year))
 
 (defgeneric timestamp-difference (t1 t2))
 
@@ -256,7 +273,7 @@
       (dolist (slot-name (mapcar #'sb-mop:slot-definition-name (sb-mop:class-slots class)))
         (when (slot-boundp object slot-name)
           (setf (slot-value copy slot-name)
-            (slot-value object slot-name))))
+                (slot-value object slot-name))))
       (apply #'reinitialize-instance copy initargs))))
 
 (defun adjust-timestamp (timestamp &rest spec))
