@@ -34,7 +34,7 @@
                          :day day :month month :year year)
   (setf (internal-timestamp timestamp)
         (local-time:encode-timestamp 0 seconds minutes hour
-                                     1 1 1900
+                                     1 1 2000
                                      :timezone local-time:+utc-zone+))
   )
 

@@ -244,10 +244,34 @@
    (timestamp->local-time t2)))
 
 (defun today ()
-  )
+  (let ((now (local-time:now)))
+    (make-instance 'date
+                   :day (local-time:timestamp-day now)
+                   :month (local-time:timestamp-month now)
+                   :year (local-time:timestamp-year now))))
+
+(today)
 
 (defun now ()
-  )
+  (let ((now (local-time:now)))
+    (make-instance 'zoned-datetime
+                   :seconds (local-time:timestamp-second now)
+                   :minutes (local-time:timestamp-minute now)
+                   :hour (local-time:timestamp-hour now)
+                   :day (local-time:timestamp-day now)
+                   :month (local-time:timestamp-month now)
+                   :year (local-time:timestamp-year now)
+                   :timezone local-time:*default-timezone*)))
+
+(now)
+
+(defun local-datetime->date (timestamp)
+  (make-instance 'date
+                   :day (day-of timestamp)
+                   :month (month-of timestamp)
+                   :year (year-of timestamp)))
+
+(local-datetime->date (now))
 
 (defun yesterday ())
 
