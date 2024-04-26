@@ -231,6 +231,11 @@
 (let ((day (make-instance 'zoned-datetime :day 1 :month 1 :year 2024)))
   (timestamp+ day 1 :day 2 :year))
 
+;; Use apply for a period language
+(let ((date (make-instance 'zoned-datetime :day 1 :month 1 :year 2024))
+      (period '(1 :year 2 :month)))
+  (apply #'timestamp+ date period))
+
 (defgeneric timestamp-difference (t1 t2))
 
 (defmethod timestamp-difference (t1 t2)
