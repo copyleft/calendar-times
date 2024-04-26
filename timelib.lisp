@@ -9,32 +9,63 @@
 (defclass walltime (timestamp)
   ((hour :initarg :hour
          :accessor hour-of
-         :type integer)
+         :type integer
+         :initform 0)
    (minutes :initarg :minutes
             :accessor minutes-of
-            :type integer)
+            :type integer
+            :initform 0)
    (seconds :initarg :seconds
             :accessor seconds-of
-            :type integer)))
+            :type integer
+            :initform 0)))
 
 (defclass date (timestamp)
   ((year :initarg :year
          :accessor year-of)
    (month :initarg :month
-          :accessor month-of)
+          :accessor month-of
+          :initform 1)
    (day :initarg :day
-        :accessor day-of)))
+        :accessor day-of
+        :initform 1)))
 
 (defclass local-datetime (date walltime)
   ())
 
-(defclass zoned-datetime (local-datetime)
+(defclass zoned-timestamp ()
   ((timezone :initarg :timezone
-             :accessor timezone-of)))
+             :accessor timezone-of
+             :initform local-time:+utc-zone+
+             :type local-time::timezone)))
 
-(defclass zoned-date (date)
-  ((timezone :initarg :timezone
-             :accessor timezone-of)))
+(defmethod initialize-instance :around ((timestamp zoned-timestamp) &rest args)
+  (if (member :timezone args)
+      (let ((timezone (getf args :timezone)))
+        (apply #'call-next-method timestamp
+               (list* :timezone (if (typep timezone 'local-time::timezone)
+                                    timezone
+                                    (or (local-time:find-timezone-by-location-name timezone)
+                                        (error "Invalid timezone: ~s" timezone)))
+                      (alexandria:remove-from-plist args :timezone))))
+      (call-next-method)))
+
+(defmethod reinitialize-instance :around ((timestamp zoned-timestamp) &rest args)
+  (if (member :timezone args)
+      (let ((timezone (getf args :timezone)))
+        (apply #'call-next-method timestamp
+               (list* :timezone (if (typep timezone 'local-time::timezone)
+                                    timezone
+                                    (or (local-time:find-timezone-by-location-name timezone)
+                                        (error "Invalid timezone: ~s" timezone)))
+                      (alexandria:remove-from-plist args :timezone))))
+      (call-next-method)))
+
+(defclass zoned-datetime (local-datetime zoned-timestamp)
+  ())
+
+(defclass zoned-date (date zoned-timestamp)
+  ())
 
 (defun walltime->local-time (timestamp)
   (local-time:encode-timestamp
@@ -42,7 +73,7 @@
    (seconds-of timestamp)
    (minutes-of timestamp)
    (hour-of timestamp)
-   1 1 1900
+   1 1 1970
    :timezone local-time:+utc-zone+))
 
 (defun date->local-time (timestamp)
@@ -189,3 +220,55 @@
   (local-time:timestamp-difference
    (timestamp->local-time t1)
    (timestamp->local-time t2)))
+
+(defun today ()
+  )
+
+(defun now ()
+  )
+
+(defun yesterday ())
+
+(defun tomorrow ())
+
+(defun make-date (&optional year month day)
+  (let ((today (local-time:today)))
+    (make-instance 'date
+                   :year (or year (local-time:timestamp-year today))
+                   :month (or month (local-time:timestamp-month today))
+                   :day (or day (local-time:timestamp-day today)))))
+
+(make-date 2025 1 1)
+
+;; https://stackoverflow.com/questions/11067899/is-there-a-generic-method-for-cloning-clos-objects
+(defgeneric copy-instance (object &rest initargs &key &allow-other-keys)
+  (:documentation "Makes and returns a shallow copy of OBJECT.
+
+  An uninitialized object of the same class as OBJECT is allocated by
+  calling ALLOCATE-INSTANCE.  For all slots returned by
+  CLASS-SLOTS, the returned object has the
+  same slot values and slot-unbound status as OBJECT.
+
+  REINITIALIZE-INSTANCE is called to update the copy with INITARGS.")
+  (:method ((object standard-object) &rest initargs &key &allow-other-keys)
+    (let* ((class (class-of object))
+           (copy (allocate-instance class)))
+      (dolist (slot-name (mapcar #'sb-mop:slot-definition-name (sb-mop:class-slots class)))
+        (when (slot-boundp object slot-name)
+          (setf (slot-value copy slot-name)
+            (slot-value object slot-name))))
+      (apply #'reinitialize-instance copy initargs))))
+
+(defun adjust-timestamp (timestamp &rest spec))
+
+(defgeneric clone-timestamp (timestamp &rest args))
+(defmethod clone-timestamp ((timestamp timestamp) &rest args)
+  (apply #'copy-instance timestamp args))
+
+(let* ((d1 (make-date 2024 10 10))
+       (d2 (clone-timestamp d1 :year 2023)))
+  (list d1 d2))
+
+(let* ((d1 (make-instance 'zoned-datetime :year 2023 :timezone "America/Argentina/Buenos_Aires"))
+       (d2 (clone-timestamp d1 :timezone "Europe/Stockholm")))
+  (list d1 d2))
