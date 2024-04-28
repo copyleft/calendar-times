@@ -1,16 +1,26 @@
 (defpackage :timelib
-  (:use :cl))
+  (:use :cl)
+  (:export #:timestamp
+           #:walltime
+           #:date
+           #:local-datetime
+           #:timestamp+
+           #:parse-timestring)
+  (:documentation "TIMELIB is a calendar time library implemented on top of LOCAL-TIME library.
+
+It features zoned timestamps and calculations."))
 
 (in-package :timelib)
 
 (defclass timestamp ()
-  ())
+  ()
+  (:documentation "Abstract timestamp class"))
 
 (defclass walltime (timestamp)
   ((hour :initarg :hour
          :accessor hour-of
          :type integer
-         :initform 0)
+         :initform 0)x
    (minutes :initarg :minutes
             :accessor minutes-of
             :type integer
@@ -18,7 +28,8 @@
    (seconds :initarg :seconds
             :accessor seconds-of
             :type integer
-            :initform 0)))
+            :initform 0))
+  (:documentation "Represents a 'wall' time. Like 01:01:22"))
 
 (defclass date (timestamp)
   ((year :initarg :year
@@ -284,7 +295,7 @@
                    :month (or month (local-time:timestamp-month today))
                    :day (or day (local-time:timestamp-day today)))))
 
-(make-date 2025 1 1)
+;; (make-date 2025 1 1)
 
 ;; https://stackoverflow.com/questions/11067899/is-there-a-generic-method-for-cloning-clos-objects
 (defgeneric copy-instance (object &rest initargs &key &allow-other-keys)
@@ -311,10 +322,12 @@
 (defmethod clone-timestamp ((timestamp timestamp) &rest args)
   (apply #'copy-instance timestamp args))
 
+#+test
 (let* ((d1 (make-date 2024 10 10))
        (d2 (clone-timestamp d1 :year 2023)))
   (list d1 d2))
 
+#+test
 (let* ((d1 (make-instance 'zoned-datetime :year 2023 :timezone "America/Argentina/Buenos_Aires"))
        (d2 (clone-timestamp d1 :timezone "Europe/Stockholm")))
   (list d1 d2))
@@ -332,7 +345,7 @@
    (timestamp->local-time t1)
    (timestamp->local-time t2)))
 
-(timestamp-compare
+#+test(timestamp-compare
  (make-instance 'zoned-datetime :year 2023 :timezone "America/Argentina/Buenos_Aires")
  (make-instance 'zoned-datetime :year 2023))
 
@@ -346,8 +359,8 @@
                          :month month
                          :day day)))
 
-(parse-date "2014-10-10")
-(parse-date "2014-10-11")
+;; (parse-date "2014-10-10")
+;; (parse-date "2014-10-11")
 
 (defun parse-walltime (string)
   (local-time->walltime
@@ -357,7 +370,7 @@
     :allow-missing-time-part nil
     :allow-missing-timezone-part t)))
 
-(parse-walltime "03:24:34")
+;; (parse-walltime "03:24:34")
 
 (defun parse-zoned-datetime (string)
   (local-time->zoned-datetime
@@ -370,7 +383,7 @@
 (defmethod parse-timestring ((timestring string) (class (eql 'date)) &rest args)
   (parse-date timestring))
 
-(parse-timestring "2014-10-10" 'date)
+;; (parse-timestring "2014-10-10" 'date)
 
 (defmethod parse-timestring ((timestring string) (class (eql 'walltime)) &rest args)
   (parse-walltime timestring))
@@ -378,7 +391,7 @@
 (defmethod parse-timestring ((timestring string) (class (eql 'time)) &rest args)
   (parse-walltime timestring))
 
-(parse-timestring "01:00:22" 'time)
+;; (parse-timestring "01:00:22" 'time)
 
 (let* ((d1 (make-date 2024 1 10))
        (d2 (parse-date (format-timestamp nil d1))))
@@ -388,4 +401,4 @@
        (d2 (parse-date (format-timestamp nil d1))))
   (list d1 d2 (timestamp= d1 d2)))
 
-(parse-date (format-timestamp nil (make-date 2024 1 10)))
+;; (parse-date (format-timestamp nil (make-date 2024 1 10)))
