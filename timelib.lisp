@@ -115,7 +115,25 @@ It features zoned timestamps and calculations."))
 ;; (make-datetime 0 0 0 1 1 2024)
 ;; (make-datetime 0 0 0 30 2 2024)
 
+(defun make-zoned-datetime (seconds minutes hour day month year &optional (timezone local-time:+utc-zone+))
+  (unless (local-time::valid-timestamp-p 0 seconds minutes hour day month year)
+    (error "Invalid datetime: ~4,'0d-~2,'0d-~2,'0dT~2,'0d:~2,'0d:~2,'0d"
+           year month day hour minutes seconds))
+  (let ((datetime (make-instance 'zoned-datetime)))
+    (setf (slot-value datetime 'hour) hour
+          (slot-value datetime 'minutes) minutes
+          (slot-value datetime 'seconds) seconds
+          (slot-value datetime 'year) year
+          (slot-value datetime 'month) month
+          (slot-value datetime 'day) day
+          (slot-value datetime 'timezone) (etypecase timezone
+                                            (local-time::timezone timezone)
+                                            (string (local-time:find-timezone-by-location-name timezone))))
+    datetime))
 
+;; (make-zoned-datetime 0 0 0 1 1 2024)
+;; (make-zoned-datetime 0 0 0 30 2 2024)
+;; (make-zoned-datetime 0 0 0 1 1 2024 "America/Argentina/Buenos_Aires")
 
 ;; ** Conversions
 
