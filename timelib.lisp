@@ -429,12 +429,12 @@ It features zoned timestamps and calculations."))
 
 ;; (parse-timestring "01:00:22" 'time)
 
-(let* ((d1 (make-date 2024 1 10))
-       (d2 (parse-date (format-timestamp nil d1))))
-  (list d1 d2 (timestamp-compare d1 d2)))
+;; (let* ((d1 (make-date 2024 1 10))
+;;        (d2 (parse-date (format-timestamp nil d1))))
+;;   (list d1 d2 (timestamp-compare d1 d2)))
 
-(let* ((d1 (make-date 2024 1 10))
-       (d2 (parse-date (format-timestamp nil d1))))
-  (list d1 d2 (timestamp= d1 d2)))
+;; (let* ((d1 (make-date 2024 1 10))
+;;        (d2 (parse-date (format-timestamp nil d1))))
+;;   (list d1 d2 (timestamp= d1 d2)))
 
 ;; (parse-date (format-timestamp nil (make-date 2024 1 10)))
