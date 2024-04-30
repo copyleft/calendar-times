@@ -3,7 +3,7 @@
   (:export #:timestamp
            #:walltime
            #:date
-           #:local-datetime
+           #:datetime
            #:timestamp+
            #:parse-timestring)
   (:documentation "TIMELIB is a calendar time library implemented on top of LOCAL-TIME library.
@@ -12,71 +12,112 @@ It features zoned timestamps and calculations."))
 
 (in-package :timelib)
 
+;; ** Timestamp classes
+
 (defclass timestamp ()
   ()
   (:documentation "Abstract timestamp class"))
 
 (defclass walltime (timestamp)
-  ((hour :initarg :hour
-         :accessor hour-of
-         :type integer
-         :initform 0)x
-   (minutes :initarg :minutes
-            :accessor minutes-of
-            :type integer
-            :initform 0)
-   (seconds :initarg :seconds
-            :accessor seconds-of
-            :type integer
-            :initform 0))
+  ((hour :reader hour-of
+         :type integer)
+   (minutes :reader minutes-of
+            :type integer)
+   (seconds :reader seconds-of
+            :type integer))
   (:documentation "Represents a 'wall' time. Like 01:01:22"))
 
 (defclass date (timestamp)
-  ((year :initarg :year
-         :accessor year-of)
-   (month :initarg :month
-          :accessor month-of
-          :initform 1)
-   (day :initarg :day
-        :accessor day-of
-        :initform 1)))
+  ((year :reader year-of)
+   (month :reader month-of)
+   (day :reader day-of))
+  (:documentation "A date like 2024-01-01"))
 
-(defclass local-datetime (date walltime)
-  ())
+(defclass datetime (date walltime)
+  ()
+  (:documentation "A datetime like 2024-01-01T00:00:00"))
 
 (defclass zoned-timestamp ()
-  ((timezone :initarg :timezone
-             :accessor timezone-of
+  ((timezone :reader timezone-of
              :initform local-time:+utc-zone+
-             :type local-time::timezone)))
+             :type local-time::timezone))
+  (:documentation "A timestamp with timezone. Abstract class."))
 
-(defmethod initialize-instance :around ((timestamp zoned-timestamp) &rest args)
-  (if (member :timezone args)
-      (let ((timezone (getf args :timezone)))
-        (apply #'call-next-method timestamp
-               (list* :timezone (if (typep timezone 'local-time::timezone)
-                                    timezone
-                                    (or (local-time:find-timezone-by-location-name timezone)
-                                        (error "Invalid timezone: ~s" timezone)))
-                      (alexandria:remove-from-plist args :timezone))))
-      (call-next-method)))
+(defclass zoned-datetime (datetime zoned-timestamp)
+  ()
+  (:documentation "A datetime with a timezone."))
 
-(defmethod reinitialize-instance :around ((timestamp zoned-timestamp) &rest args)
-  (if (member :timezone args)
-      (let ((timezone (getf args :timezone)))
-        (apply #'call-next-method timestamp
-               (list* :timezone (if (typep timezone 'local-time::timezone)
-                                    timezone
-                                    (or (local-time:find-timezone-by-location-name timezone)
-                                        (error "Invalid timezone: ~s" timezone)))
-                      (alexandria:remove-from-plist args :timezone))))
-      (call-next-method)))
+;; (defmethod initialize-instance :around ((timestamp zoned-timestamp) &rest args)
+;;   (if (member :timezone args)
+;;       (let ((timezone (getf args :timezone)))
+;;         (apply #'call-next-method timestamp
+;;                (list* :timezone (if (typep timezone 'local-time::timezone)
+;;                                     timezone
+;;                                     (or (local-time:find-timezone-by-location-name timezone)
+;;                                         (error "Invalid timezone: ~s" timezone)))
+;;                       (alexandria:remove-from-plist args :timezone))))
+;;       (call-next-method)))
 
-(defclass zoned-datetime (local-datetime zoned-timestamp)
-  ())
+;; (defmethod reinitialize-instance :around ((timestamp zoned-timestamp) &rest args)
+;;   (if (member :timezone args)
+;;       (let ((timezone (getf args :timezone)))
+;;         (apply #'call-next-method timestamp
+;;                (list* :timezone (if (typep timezone 'local-time::timezone)
+;;                                     timezone
+;;                                     (or (local-time:find-timezone-by-location-name timezone)
+;;                                         (error "Invalid timezone: ~s" timezone)))
+;;                       (alexandria:remove-from-plist args :timezone))))
+;;       (call-next-method)))
+
 
 (defclass zoned-date (date zoned-timestamp)
   ())
+
+;; * Constructors
+
+(defun make-walltime (hour minutes seconds)
+  (unless (local-time::valid-timestamp-p 0 seconds minutes hour 1 1 1970)
+    (error "Invalid walltime: ~2,'0d:~2,'0d:~2,'0d" hour minutes seconds))
+  (let ((walltime (make-instance 'walltime)))
+    (setf (slot-value walltime 'hour) hour
+          (slot-value walltime 'minutes) minutes
+          (slot-value walltime 'seconds) seconds)
+    walltime))
+
+;;(make-walltime 24 0 0)
+;;(make-walltime 1 33 4)
+
+(defun make-date (day month year)
+  (unless (local-time::valid-timestamp-p 0 0 0 0 day month year)
+    (error "Invalid date: ~4,'0d-~2,'0d-~2,'0d" year month day))
+  (let ((date (make-instance 'date)))
+    (setf (slot-value date 'year) year
+          (slot-value date 'month) month
+          (slot-value date 'day) day)
+    date))
+
+;; (make-date 1 1 2024)
+;; (make-date 30 2 2024)
+
+(defun make-datetime (seconds minutes hour day month year)
+  (unless (local-time::valid-timestamp-p 0 seconds minutes hour day month year)
+    (error "Invalid datetime: ~4,'0d-~2,'0d-~2,'0dT~2,'0d:~2,'0d:~2,'0d"
+           year month day hour minutes seconds))
+  (let ((datetime (make-instance 'datetime)))
+    (setf (slot-value datetime 'hour) hour
+          (slot-value datetime 'minutes) minutes
+          (slot-value datetime 'seconds) seconds
+          (slot-value datetime 'year) year
+          (slot-value datetime 'month) month
+          (slot-value datetime 'day) day)
+    datetime))
+
+;; (make-datetime 0 0 0 1 1 2024)
+;; (make-datetime 0 0 0 30 2 2024)
+
+
+
+;; ** Conversions
 
 (defun walltime->local-time (timestamp)
   (local-time:encode-timestamp
@@ -95,8 +136,8 @@ It features zoned timestamps and calculations."))
    (year-of timestamp)
    :timezone local-time:+utc-zone+))
 
-(defun local-datetime->local-time (timestamp &optional (timezone local-time:*default-timezone*) offset)
-  (check-type timestamp local-datetime)
+(defun datetime->local-time (timestamp &optional (timezone local-time:*default-timezone*) offset)
+  (check-type timestamp datetime)
   (local-time:encode-timestamp
    0
    (seconds-of timestamp)
@@ -108,9 +149,9 @@ It features zoned timestamps and calculations."))
    :timezone timezone
    :offset offset))
 
-(defun local-datetime->universal (timestamp &optional timezone offset)
+(defun datetime->universal (timestamp &optional timezone offset)
   (local-time:timestamp-to-universal
-   (local-datetime->local-time timestamp timezone offset)))
+   (datetime->local-time timestamp timezone offset)))
 
 (defun zoned-datetime->local-time (timestamp)
   (check-type timestamp zoned-datetime)
@@ -124,44 +165,15 @@ It features zoned timestamps and calculations."))
    (year-of timestamp)
    :timezone (timezone-of timestamp)))
 
-(defgeneric format-timestamp (destination timestamp &rest args))
-
-(defmethod format-timestamp (destination (timestamp zoned-datetime) &rest args)
-  (local-time:format-timestring destination (zoned-datetime->local-time timestamp)
-                                :timezone (timezone-of timestamp)))
-
-(defmethod format-timestamp (destination (timestamp date) &rest args)
-  (local-time:format-timestring
-   destination
-   (date->local-time timestamp)
-   :format local-time:+iso-8601-date-format+
-   :timezone local-time:+utc-zone+))
-
-(defparameter +zoned-date-format+
-  ;; 2008-11-18T02:32:00.586931+01:00
-  (append local-time:+iso-8601-date-format+ (list #\T) (list :gmt-offset-or-z)))
-
-(defmethod format-timestamp (destination (timestamp zoned-date) &rest args)
-  (local-time:format-timestring
-   destination
-   (date->local-time timestamp)
-   :timezone (timezone-of timestamp)
-   :format +zoned-date-format+))
-
-(defmethod format-timestamp (destination (timestamp walltime) &rest args)
-  (local-time:format-timestring
-   destination
-   (walltime->local-time timestamp)
-   :format local-time:+iso-8601-time-format+
-   :timezone local-time:+utc-zone+))
-
-(defmethod print-object ((timestamp timestamp) stream)
-  (print-unreadable-object (timestamp stream :type t)
-    (format-timestamp stream timestamp)))
+(defun datetime->date (timestamp)
+  (make-instance 'date
+                 :day (day-of timestamp)
+                 :month (month-of timestamp)
+                 :year (year-of timestamp)))
 
 (defgeneric timestamp-convert (timestamp class &rest args))
 
-(defmethod timestamp-convert ((timestamp local-datetime) (class (eql 'date)) &rest args)
+(defmethod timestamp-convert ((timestamp datetime) (class (eql 'date)) &rest args)
   (make-instance 'date
                  :day (day-of timestamp)
                  :month (month-of timestamp)
@@ -198,6 +210,54 @@ It features zoned timestamps and calculations."))
 
 (defgeneric local-time->timestamp (local-time timestamp-class))
 
+;; ** Formatting
+
+(defgeneric format-timestamp (destination timestamp &rest args))
+
+(defmethod format-timestamp (destination (timestamp zoned-datetime) &rest args)
+  (local-time:format-timestring destination (zoned-datetime->local-time timestamp)
+                                :timezone (timezone-of timestamp)))
+
+(defmethod format-timestamp (destination (timestamp date) &rest args)
+  (local-time:format-timestring
+   destination
+   (date->local-time timestamp)
+   :format local-time:+iso-8601-date-format+
+   :timezone local-time:+utc-zone+))
+
+(defparameter +zoned-date-format+
+  ;; 2008-11-18T02:32:00.586931+01:00
+  (append local-time:+iso-8601-date-format+ (list #\T) (list :gmt-offset-or-z)))
+
+(defmethod format-timestamp (destination (timestamp zoned-date) &rest args)
+  (local-time:format-timestring
+   destination
+   (date->local-time timestamp)
+   :timezone (timezone-of timestamp)
+   :format +zoned-date-format+))
+
+(defmethod format-timestamp (destination (timestamp walltime) &rest args)
+  (local-time:format-timestring
+   destination
+   (walltime->local-time timestamp)
+   :format local-time:+iso-8601-time-format+
+   :timezone local-time:+utc-zone+))
+
+(defparameter +iso-8601-datetime-format+
+  ;; 2008-11-18T02:32:00.586931+01:00
+  (append local-time::+iso-8601-date-format+ (list #\T) local-time::+iso-8601-time-format+))
+
+(defmethod format-timestamp (destination (timestamp datetime) &rest args)
+  (local-time:format-timestring
+   destination
+   (datetime->local-time timestamp)
+   :format +iso-8601-datetime-format+))
+
+(defmethod print-object ((timestamp timestamp) stream)
+  (print-unreadable-object (timestamp stream :type t)
+    (format-timestamp stream timestamp)))
+
+;; ** Calculations
 
 (defgeneric timestamp+ (timestamp amount unit &rest more))
 (defmethod timestamp+ ((timestamp timestamp) amount unit &rest more)
@@ -217,12 +277,6 @@ It features zoned timestamps and calculations."))
         (apply #'timestamp+ new-timestamp (car more) (cadr more) (cddr more))
         new-timestamp)))
 
-(let ((day (make-instance 'date :day 1 :month 1 :year 2024)))
-  (timestamp+ day 1 :day))
-
-(let ((day (make-instance 'date :day 1 :month 1 :year 2024)))
-  (timestamp+ day 1 :day 2 :year))
-
 (defmethod timestamp+ ((timestamp zoned-datetime) amount unit &rest more)
   (let* ((lt (local-time:timestamp+ (timestamp->local-time timestamp) amount unit
                                     (timezone-of timestamp)))
@@ -239,13 +293,13 @@ It features zoned timestamps and calculations."))
         (apply #'timestamp+ new-timestamp (car more) (cadr more) (cddr more))
         new-timestamp)))
 
-(let ((day (make-instance 'zoned-datetime :day 1 :month 1 :year 2024)))
-  (timestamp+ day 1 :day 2 :year))
+;; (let ((day (make-instance 'zoned-datetime :day 1 :month 1 :year 2024)))
+;;   (timestamp+ day 1 :day 2 :year))
 
 ;; Use apply for a period language
-(let ((date (make-instance 'zoned-datetime :day 1 :month 1 :year 2024))
-      (period '(1 :year 2 :month)))
-  (apply #'timestamp+ date period))
+;; (let ((date (make-instance 'zoned-datetime :day 1 :month 1 :year 2024))
+;;       (period '(1 :year 2 :month)))
+;;   (apply #'timestamp+ date period))
 
 (defgeneric timestamp-difference (t1 t2))
 
@@ -261,7 +315,6 @@ It features zoned timestamps and calculations."))
                    :month (local-time:timestamp-month now)
                    :year (local-time:timestamp-year now))))
 
-(today)
 
 (defun now ()
   (let ((now (local-time:now)))
@@ -274,28 +327,9 @@ It features zoned timestamps and calculations."))
                    :year (local-time:timestamp-year now)
                    :timezone local-time:*default-timezone*)))
 
-(now)
-
-(defun local-datetime->date (timestamp)
-  (make-instance 'date
-                   :day (day-of timestamp)
-                   :month (month-of timestamp)
-                   :year (year-of timestamp)))
-
-(local-datetime->date (now))
-
 (defun yesterday ())
 
 (defun tomorrow ())
-
-(defun make-date (&optional year month day)
-  (let ((today (local-time:today)))
-    (make-instance 'date
-                   :year (or year (local-time:timestamp-year today))
-                   :month (or month (local-time:timestamp-month today))
-                   :day (or day (local-time:timestamp-day today)))))
-
-;; (make-date 2025 1 1)
 
 ;; https://stackoverflow.com/questions/11067899/is-there-a-generic-method-for-cloning-clos-objects
 (defgeneric copy-instance (object &rest initargs &key &allow-other-keys)
@@ -346,8 +380,10 @@ It features zoned timestamps and calculations."))
    (timestamp->local-time t2)))
 
 #+test(timestamp-compare
- (make-instance 'zoned-datetime :year 2023 :timezone "America/Argentina/Buenos_Aires")
- (make-instance 'zoned-datetime :year 2023))
+       (make-instance 'zoned-datetime :year 2023 :timezone "America/Argentina/Buenos_Aires")
+       (make-instance 'zoned-datetime :year 2023))
+
+;; ** Parsing
 
 (defun parse-date (string)
   (destructuring-bind (year month day &rest args)
