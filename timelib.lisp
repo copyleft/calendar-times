@@ -310,10 +310,9 @@ It features zoned timestamps and calculations."))
 
 (defun today ()
   (let ((now (local-time:now)))
-    (make-instance 'date
-                   :day (local-time:timestamp-day now)
-                   :month (local-time:timestamp-month now)
-                   :year (local-time:timestamp-year now))))
+    (make-date (local-time:timestamp-day now)
+               (local-time:timestamp-month now)
+               (local-time:timestamp-year now))))
 
 
 (defun now ()
