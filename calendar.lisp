@@ -19,11 +19,39 @@
 (defun make-time-measure (value unit)
   (%make-time-measure :value value :unit unit))
 
-(defstruct year
+(defstruct (year
+            (:constructor %make-year))
   number)
 
-(make-year :number 2020)
+(defun year (number)
+  (%make-year :number number))
+
+(year 2020)
+
+(defstruct (month
+            (:constructor %make-month))
+  number)
+
+(defun month (number-or-name)
+  (%make-month :number number-or-name))
+
+(month 1)
+
+(defstruct (day-of-month
+            (:constructor %make-day-of-month))
+  day month)
+
+(defun day-of-month (day month)
+  (%make-day-of-month :day day :month month))
 
 (defun yesterday ())
 
 (defun tomorrow ())
+
+(defgeneric distance-between (ce1 ce2)
+  (:documentation "Distance between two calendar entities."))
+
+(defmethod distance-between ((y1 year) (y2 year)) 
+  (make-time-measure (abs (- (year-number y2) (year-number y1))) :year))
+
+(distance-between (year 2005) (year 2006))
