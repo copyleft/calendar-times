@@ -288,9 +288,9 @@ It features zoned timestamps and calculations."))
 (defmethod timestamp+ ((timestamp date) amount unit &rest more)
   (let* ((lt (local-time:timestamp+ (timestamp->local-time timestamp) amount unit))
          (new-timestamp
-           (make-instance 'date :day (local-time:timestamp-day lt)
-                                :month (local-time:timestamp-month lt)
-                                :year (local-time:timestamp-year lt))))
+           (make-date (local-time:timestamp-day lt)
+                      (local-time:timestamp-month lt)
+                      (local-time:timestamp-year lt))))
     (if more
         (apply #'timestamp+ new-timestamp (car more) (cadr more) (cddr more))
         new-timestamp)))

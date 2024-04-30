@@ -7,12 +7,17 @@
    :time-measure-value
    :time-measure-unit
    :year
-   :year-value))
+   :year-value
+   :make-time-measure))
 
 (in-package :calendar)
 
-(defstruct time-measure
+(defstruct (time-measure
+            (:constructor %make-time-measure))
   value unit)
+
+(defun make-time-measure (value unit)
+  (%make-time-measure :value value :unit unit))
 
 (defstruct year
   number)
