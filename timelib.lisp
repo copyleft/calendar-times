@@ -1,11 +1,27 @@
 (defpackage :timelib
   (:use :cl)
-  (:export #:timestamp
-           #:walltime
-           #:date
-           #:datetime
-           #:timestamp+
-           #:parse-timestring)
+  (:export
+   ;; classes
+   #:timestamp
+   #:walltime
+   #:date
+   #:datetime
+   #:zoned-datetime
+
+   ;; constructors
+   #:make-walltime
+   #:make-date
+   #:make-datetime
+   #:make-zoned-datetime
+   
+   ;; calculations
+   #:timestamp+
+
+   ;; formatting
+   #:format-timestamp
+
+   ;; parsing
+   #:parse-timestring)
   (:documentation "TIMELIB is a calendar time library implemented on top of LOCAL-TIME library.
 
 It features zoned timestamps and calculations."))
