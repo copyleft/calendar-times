@@ -326,12 +326,42 @@ It features zoned timestamps and calculations."))
       (period '(1 :year 2 :month)))
   (apply #'timestamp+ date period))
 
-(defgeneric timestamp-difference (t1 t2))
+;; Naive units conversions. How to improve?
+(defgeneric convert-units (value from-unit to-unit))
+(defmethod convert-units (value (from-unit (eql :seconds))
+                          (to-unit (eql :minutes)))
+  (/ value 60))
+(defmethod convert-units (value (from-unit (eql :minutes)) (to-unit (eql :hours)))
+  (/ value 60))
+(defmethod convert-units (value (from-unit (eql :seconds)) (to-unit (eql :hours)))
+  (convert-units (/ value 60) :minutes :hours))
 
-(defmethod timestamp-difference (t1 t2)
-  (local-time:timestamp-difference
-   (timestamp->local-time t1)
-   (timestamp->local-time t2)))
+(convert-units 60 :seconds :minutes)
+(convert-units 7200 :seconds :hours)
+
+(defmethod convert-units (value (from-unit (eql :minutes))
+                          (to-unit (eql :seconds)))
+  (* value 60))
+
+(defmethod convert-units (value (from-unit (eql :hours))
+                          (to-unit (eql :minutes)))
+  (* value 60))
+
+(defmethod convert-units (value (from-unit (eql :hours))
+                          (to-unit (eql :seconds)))
+  (convert-units (* value 60) :minutes :seconds))
+
+(convert-units 2 :hours :minutes)
+
+(defgeneric timestamp-difference (t1 t2 &optional unit))
+
+(defmethod timestamp-difference (t1 t2 &optional unit)
+  (let ((seconds (local-time:timestamp-difference
+                  (timestamp->local-time t1)
+                  (timestamp->local-time t2))))
+    (if unit
+        (convert-units seconds :seconds unit)
+        seconds)))
 
 (defun today ()
   (let ((now (local-time:now)))

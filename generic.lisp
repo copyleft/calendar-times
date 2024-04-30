@@ -11,6 +11,9 @@
                          (time-measure-value measure)
                          (time-measure-unit measure)))
 
+(defmethod generic-cl:equalp ((a local-time:timestamp) (b local-time:timestamp))
+  (local-time:timestamp= a b))
+
 (gcl:+ (local-time:now) (make-time-measure 2 :year))
 
 (defmethod gcl:add ((timestamp timelib:timestamp) (measure calendar:time-measure))
@@ -23,3 +26,9 @@
   (local-time:timestamp< a b))
 
 (gcl:< (local-time:now) (gcl:+ (local-time:now) (make-time-measure 2 :minute)))
+
+(defmethod generic-cl:subtract ((a local-time:timestamp) (b local-time:timestamp))
+  (local-time:timestamp-difference a b))
+
+(defmethod generic-cl:subtract ((a timelib:timestamp) (b timelib:timestamp))
+  (timelib::timestamp-difference a b))

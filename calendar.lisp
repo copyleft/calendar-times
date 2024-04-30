@@ -44,6 +44,14 @@
 (defun day-of-month (day month)
   (%make-day-of-month :day day :month month))
 
+(defstruct (week
+            (:constructor %make-week))
+  number year)
+
+(defstruct (semester
+            (:constructor %make-semester))
+  number year)
+
 (defun yesterday ())
 
 (defun tomorrow ())
@@ -55,3 +63,9 @@
   (make-time-measure (abs (- (year-number y2) (year-number y1))) :year))
 
 (distance-between (year 2005) (year 2006))
+
+(defgeneric days-of (entity))
+(defgeneric months-of (entity))
+(defgeneric hours-of (entity))
+(defgeneric minutes-of (entity))
+(defgeneric weeks-of (entity))
