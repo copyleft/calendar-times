@@ -43,32 +43,19 @@ It features zoned timestamps and calculations."))
              :type local-time::timezone))
   (:documentation "A timestamp with timezone. Abstract class."))
 
+(defclass offset-timestamp ()
+  ((offset :reader offset-of
+           :initform 0
+           :type integer))
+  (:documentation "A timestamp with an offset"))
+
 (defclass zoned-datetime (datetime zoned-timestamp)
   ()
   (:documentation "A datetime with a timezone."))
 
-;; (defmethod initialize-instance :around ((timestamp zoned-timestamp) &rest args)
-;;   (if (member :timezone args)
-;;       (let ((timezone (getf args :timezone)))
-;;         (apply #'call-next-method timestamp
-;;                (list* :timezone (if (typep timezone 'local-time::timezone)
-;;                                     timezone
-;;                                     (or (local-time:find-timezone-by-location-name timezone)
-;;                                         (error "Invalid timezone: ~s" timezone)))
-;;                       (alexandria:remove-from-plist args :timezone))))
-;;       (call-next-method)))
-
-;; (defmethod reinitialize-instance :around ((timestamp zoned-timestamp) &rest args)
-;;   (if (member :timezone args)
-;;       (let ((timezone (getf args :timezone)))
-;;         (apply #'call-next-method timestamp
-;;                (list* :timezone (if (typep timezone 'local-time::timezone)
-;;                                     timezone
-;;                                     (or (local-time:find-timezone-by-location-name timezone)
-;;                                         (error "Invalid timezone: ~s" timezone)))
-;;                       (alexandria:remove-from-plist args :timezone))))
-;;       (call-next-method)))
-
+(defclass offset-datetime (datetime offset-timestamp)
+  ()
+  (:documentation "A datetime with an offset"))
 
 (defclass zoned-date (date zoned-timestamp)
   ())
