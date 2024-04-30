@@ -232,8 +232,14 @@ It features zoned timestamps and calculations."))
 (defgeneric format-timestamp (destination timestamp &rest args))
 
 (defmethod format-timestamp (destination (timestamp zoned-datetime) &rest args)
-  (local-time:format-timestring destination (zoned-datetime->local-time timestamp)
-                                :timezone (timezone-of timestamp)))
+  (declare (ignore args))
+  (local-time:format-timestring
+   destination (zoned-datetime->local-time timestamp)
+   :format local-time:+iso-8601-date-format+
+   :timezone (timezone-of timestamp))
+  (uiop:with-output (out destination)
+    (write-char #\space out)
+    (write-string (local-time::timezone-name (timezone-of timestamp)) out)))
 
 (defmethod format-timestamp (destination (timestamp date) &rest args)
   (local-time:format-timestring
