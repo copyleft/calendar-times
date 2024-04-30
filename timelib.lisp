@@ -75,7 +75,7 @@ It features zoned timestamps and calculations."))
 
 ;; * Constructors
 
-(defun make-walltime (hour minutes seconds)
+(defun make-walltime (seconds minutes hour)
   (unless (local-time::valid-timestamp-p 0 seconds minutes hour 1 1 1970)
     (error "Invalid walltime: ~2,'0d:~2,'0d:~2,'0d" hour minutes seconds))
   (let ((walltime (make-instance 'walltime)))
@@ -84,8 +84,8 @@ It features zoned timestamps and calculations."))
           (slot-value walltime 'seconds) seconds)
     walltime))
 
-;;(make-walltime 24 0 0)
-;;(make-walltime 1 33 4)
+;;(make-walltime 0 0 24)
+;;(make-walltime 4 33 1)
 
 (defun make-date (day month year)
   (unless (local-time::valid-timestamp-p 0 0 0 0 day month year)
@@ -184,18 +184,16 @@ It features zoned timestamps and calculations."))
    :timezone (timezone-of timestamp)))
 
 (defun datetime->date (timestamp)
-  (make-instance 'date
-                 :day (day-of timestamp)
-                 :month (month-of timestamp)
-                 :year (year-of timestamp)))
+  (make-date (day-of timestamp)
+             (month-of timestamp)
+             (year-of timestamp)))
 
 (defgeneric timestamp-convert (timestamp class &rest args))
 
 (defmethod timestamp-convert ((timestamp datetime) (class (eql 'date)) &rest args)
-  (make-instance 'date
-                 :day (day-of timestamp)
-                 :month (month-of timestamp)
-                 :year (year-of timestamp)))
+  (make-date (day-of timestamp)
+             (month-of timestamp)
+             (year-of timestamp)))
 
 (defgeneric timestamp->local-time (timestamp))
 (defmethod timestamp->local-time ((timestamp date))
@@ -215,16 +213,14 @@ It features zoned timestamps and calculations."))
    :timezone (timezone-of timestamp)))
 
 (defun local-time->date (timestamp)
-  (make-instance 'date
-                 :year (local-time:timestamp-year timestamp)
-                 :month (local-time:timestamp-month timestamp)
-                 :day (local-time:timestamp-day timestamp)))
+  (make-date (local-time:timestamp-day timestamp)
+             (local-time:timestamp-month timestamp)
+             (local-time:timestamp-year timestamp)))
 
 (defun local-time->walltime (timestamp)
-  (make-instance 'walltime
-                 :hour (local-time:timestamp-hour timestamp)
-                 :minutes (local-time:timestamp-minute timestamp)
-                 :seconds (local-time:timestamp-second timestamp)))
+  (make-walltime (local-time:timestamp-second timestamp)
+                 (local-time:timestamp-minute timestamp)
+                 (local-time:timestamp-hour timestamp)))
 
 (defgeneric local-time->timestamp (local-time timestamp-class))
 
@@ -299,25 +295,27 @@ It features zoned timestamps and calculations."))
   (let* ((lt (local-time:timestamp+ (timestamp->local-time timestamp) amount unit
                                     (timezone-of timestamp)))
          (new-timestamp
-           (make-instance 'zoned-datetime
-                          :seconds (local-time:timestamp-second lt :timezone (timezone-of timestamp))
-                          :minutes (local-time:timestamp-minute lt :timezone (timezone-of timestamp))
-                          :hour (local-time:timestamp-hour lt :timezone (timezone-of timestamp))
-                          :day (local-time:timestamp-day lt :timezone (timezone-of timestamp))
-                          :month (local-time:timestamp-month lt :timezone (timezone-of timestamp))
-                          :year (local-time:timestamp-year lt :timezone (timezone-of timestamp))
-                          :timezone (timezone-of timestamp))))
+           (make-zoned-datetime
+            (local-time:timestamp-second lt :timezone (timezone-of timestamp))
+            (local-time:timestamp-minute lt :timezone (timezone-of timestamp))
+            (local-time:timestamp-hour lt :timezone (timezone-of timestamp))
+            (local-time:timestamp-day lt :timezone (timezone-of timestamp))
+            (local-time:timestamp-month lt :timezone (timezone-of timestamp))
+            (local-time:timestamp-year lt :timezone (timezone-of timestamp))
+            (timezone-of timestamp))))
     (if more
         (apply #'timestamp+ new-timestamp (car more) (cadr more) (cddr more))
         new-timestamp)))
 
-;; (let ((day (make-instance 'zoned-datetime :day 1 :month 1 :year 2024)))
-;;   (timestamp+ day 1 :day 2 :year))
+#+test
+(let ((day (make-zoned-datetime 0 0 0 1 1 2024)))
+  (timestamp+ day 1 :day 2 :year))
 
 ;; Use apply for a period language
-;; (let ((date (make-instance 'zoned-datetime :day 1 :month 1 :year 2024))
-;;       (period '(1 :year 2 :month)))
-;;   (apply #'timestamp+ date period))
+#+test
+(let ((date (make-zoned-datetime 0 0 0 1 1 2024))
+      (period '(1 :year 2 :month)))
+  (apply #'timestamp+ date period))
 
 (defgeneric timestamp-difference (t1 t2))
 
@@ -335,18 +333,14 @@ It features zoned timestamps and calculations."))
 
 (defun now ()
   (let ((now (local-time:now)))
-    (make-instance 'zoned-datetime
-                   :seconds (local-time:timestamp-second now)
-                   :minutes (local-time:timestamp-minute now)
-                   :hour (local-time:timestamp-hour now)
-                   :day (local-time:timestamp-day now)
-                   :month (local-time:timestamp-month now)
-                   :year (local-time:timestamp-year now)
-                   :timezone local-time:*default-timezone*)))
-
-(defun yesterday ())
-
-(defun tomorrow ())
+    (make-zoned-datetime
+     (local-time:timestamp-second now)
+     (local-time:timestamp-minute now)
+     (local-time:timestamp-hour now)
+     (local-time:timestamp-day now)
+     (local-time:timestamp-month now)
+     (local-time:timestamp-year now)
+     local-time:*default-timezone*)))
 
 ;; https://stackoverflow.com/questions/11067899/is-there-a-generic-method-for-cloning-clos-objects
 (defgeneric copy-instance (object &rest initargs &key &allow-other-keys)
@@ -408,40 +402,40 @@ It features zoned timestamps and calculations."))
                                      :allow-missing-date-part nil
                                      :allow-missing-time-part t
                                      :allow-missing-timezone-part t)
-    (make-instance 'date :year year
-                         :month month
-                         :day day)))
+    (declare (ignore args))
+    (make-date day month year)))
 
 ;; (parse-date "2014-10-10")
 ;; (parse-date "2014-10-11")
 
 (defun parse-walltime (string)
-  (local-time->walltime
-   (local-time:parse-timestring
-    string
-    :allow-missing-date-part t
-    :allow-missing-time-part nil
-    :allow-missing-timezone-part t)))
+  (destructuring-bind (year month day hour minute second &rest args)
+      (local-time::%split-timestring string
+                                     :allow-missing-date-part t
+                                     :allow-missing-time-part nil
+                                     :allow-missing-timezone-part t)
+    (declare (ignore year month day args))
+    (make-walltime second minute hour)))
 
 ;; (parse-walltime "03:24:34")
 
 (defun parse-zoned-datetime (string)
-  (local-time->zoned-datetime
-   (local-time:parse-timestring string :allow-missing-date-part nil
-                                       :allow-missing-time-part nil
-                                       :allow-missing-timezone-part nil)))
+  (error "TODO"))
 
 (defgeneric parse-timestring (timestring class &rest args))
 
 (defmethod parse-timestring ((timestring string) (class (eql 'date)) &rest args)
+  (declare (ignore args))
   (parse-date timestring))
 
 ;; (parse-timestring "2014-10-10" 'date)
 
 (defmethod parse-timestring ((timestring string) (class (eql 'walltime)) &rest args)
+  (declare (ignore args))
   (parse-walltime timestring))
 
 (defmethod parse-timestring ((timestring string) (class (eql 'time)) &rest args)
+  (declare (ignore args))
   (parse-walltime timestring))
 
 ;; (parse-timestring "01:00:22" 'time)
@@ -454,4 +448,4 @@ It features zoned timestamps and calculations."))
 ;;        (d2 (parse-date (format-timestamp nil d1))))
 ;;   (list d1 d2 (timestamp= d1 d2)))
 
-;; (parse-date (format-timestamp nil (make-date 2024 1 10)))
+;; (parse-date (format-timestamp nil (make-date 10 1 2024)))

@@ -23,3 +23,7 @@
   number)
 
 (make-year :number 2020)
+
+(defun yesterday ())
+
+(defun tomorrow ())
