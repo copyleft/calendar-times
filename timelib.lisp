@@ -13,10 +13,27 @@
    #:make-date
    #:make-datetime
    #:make-zoned-datetime
+
+   ;; accessors
+   #:seconds-of
+   #:minutes-of
+   #:hour-of
+   #:day-of
+   #:month-of
+   #:year-of
+
+   ;; comparisons
+   #:timestamp=
    
    ;; calculations
    #:timestamp+
    #:timestamp-
+   #:timestamp-difference
+
+   ;; conversions
+   #:timestamp-convert
+   #:timestamp->local-time
+   #:timestamp->universal-time
    
    ;; formatting
    #:format-timestamp
@@ -192,12 +209,27 @@ It features zoned timestamps and calculations."))
              (month-of timestamp)
              (year-of timestamp)))
 
-(defgeneric timestamp-convert (timestamp class &rest args))
+(defgeneric timestamp-convert (timestamp class &rest args)
+  (:documentation "Convert between different classes of time types."))
 
 (defmethod timestamp-convert ((timestamp datetime) (class (eql 'date)) &rest args)
   (make-date (day-of timestamp)
              (month-of timestamp)
              (year-of timestamp)))
+
+(defmethod timestamp-convert ((timestamp datetime) (class (eql 'zoned-datetime)) &rest args)
+  (make-zoned-datetime (seconds-of timestamp)
+                       (minutes-of timestamp)
+                       (hour-of timestamp)
+                       (day-of timestamp)
+                       (month-of timestamp)
+                       (year-of timestamp)
+                       (or (car args) local-time:+utc-zone+)))
+
+(defmethod timestamp-convert ((timestamp datetime) (class (eql 'time)) &rest args)
+  (make-walltime (seconds-of timestamp)
+                 (minutes-of timestamp)
+                 (hour-of timestamp)))
 
 (defgeneric timestamp->local-time (timestamp))
 (defmethod timestamp->local-time ((timestamp date))
