@@ -69,3 +69,8 @@
 (defgeneric hours-of (entity))
 (defgeneric minutes-of (entity))
 (defgeneric weeks-of (entity))
+
+(defstruct time-period
+  years months weeks days hours minutes seconds)
+
+(make-time-period :years 2 :weeks 30)
