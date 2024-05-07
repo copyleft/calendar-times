@@ -16,7 +16,8 @@
    
    ;; calculations
    #:timestamp+
-
+   #:timestamp-
+   
    ;; formatting
    #:format-timestamp
 
@@ -283,6 +284,7 @@ It features zoned timestamps and calculations."))
 ;; ** Calculations
 
 (defgeneric timestamp+ (timestamp amount unit &rest more))
+
 (defmethod timestamp+ ((timestamp timestamp) amount unit &rest more)
   (let* ((lt (local-time:timestamp+ (timestamp->local-time timestamp) amount unit))
          (new-timestamp (local-time->timestamp lt (class-of timestamp))))
@@ -325,6 +327,51 @@ It features zoned timestamps and calculations."))
 (let ((date (make-zoned-datetime 0 0 0 1 1 2024))
       (period '(1 :year 2 :month)))
   (apply #'timestamp+ date period))
+
+(defgeneric timestamp- (timestamp amount unit &rest more))
+
+(defmethod timestamp- ((timestamp timestamp) amount unit &rest more)
+  (let* ((lt (local-time:timestamp- (timestamp->local-time timestamp) amount unit))
+         (new-timestamp (local-time->timestamp lt (class-of timestamp))))
+    (if more
+        (apply #'timestamp- new-timestamp (car more) (cadr more) (cddr more))
+        new-timestamp)))
+
+(defmethod timestamp- ((timestamp date) amount unit &rest more)
+  (let* ((lt (local-time:timestamp- (timestamp->local-time timestamp) amount unit))
+         (new-timestamp
+           (make-date (local-time:timestamp-day lt)
+                      (local-time:timestamp-month lt)
+                      (local-time:timestamp-year lt))))
+    (if more
+        (apply #'timestamp- new-timestamp (car more) (cadr more) (cddr more))
+        new-timestamp)))
+
+(defmethod timestamp- ((timestamp zoned-datetime) amount unit &rest more)
+  (let* ((lt (local-time:timestamp- (timestamp->local-time timestamp) amount unit
+                                    (timezone-of timestamp)))
+         (new-timestamp
+           (make-zoned-datetime
+            (local-time:timestamp-second lt :timezone (timezone-of timestamp))
+            (local-time:timestamp-minute lt :timezone (timezone-of timestamp))
+            (local-time:timestamp-hour lt :timezone (timezone-of timestamp))
+            (local-time:timestamp-day lt :timezone (timezone-of timestamp))
+            (local-time:timestamp-month lt :timezone (timezone-of timestamp))
+            (local-time:timestamp-year lt :timezone (timezone-of timestamp))
+            (timezone-of timestamp))))
+    (if more
+        (apply #'timestamp- new-timestamp (car more) (cadr more) (cddr more))
+        new-timestamp)))
+
+#+test
+(let ((day (make-zoned-datetime 0 0 0 1 1 2024)))
+  (timestamp- day 1 :day 2 :year))
+
+;; Use apply for a period language
+#+test
+(let ((date (make-zoned-datetime 0 0 0 1 1 2024))
+      (period '(1 :year 2 :month)))
+  (apply #'timestamp- date period))
 
 ;; Naive units conversions. How to improve?
 (defgeneric convert-units (value from-unit to-unit))
