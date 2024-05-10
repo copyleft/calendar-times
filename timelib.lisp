@@ -47,6 +47,10 @@
    #:+seconds-per-day+
    #:+seconds-per-hour+
    #:+seconds-per-minute+
+
+   ;; utilities
+   #:now
+   #:today
    
    ;; formatting
    #:format-timestamp
