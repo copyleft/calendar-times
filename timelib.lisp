@@ -69,7 +69,7 @@ It features zoned timestamps and calculations."))
 (defconstant +seconds-per-day+ 86400)
 (defconstant +seconds-per-hour+ 3600)
 (defconstant +seconds-per-minute+ 60)
-(defconstant +day-names+ #.#(:sunday :monday :tuesday :wednesday :thursday :friday :saturday))
+(defvar +day-names+ #(:sunday :monday :tuesday :wednesday :thursday :friday :saturday))
 
 ;; ** Timestamp classes
 

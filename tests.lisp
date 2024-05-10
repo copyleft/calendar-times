@@ -3,6 +3,11 @@
 
 (in-package :timelib-tests)
 
+;; (fiasco:all-tests) to run
+
+(eval-when (:load-toplevel)
+  (local-time:reread-timezone-repository))
+
 ;; https://github.com/dlowe-net/local-time/issues/67
 ;; play with hour between 1 and 2 and observe timezone
 
@@ -21,7 +26,7 @@
 
 ;; https://github.com/dlowe-net/local-time/issues/67
 ;; play with hour between 1 and 2 and observe timezone
-(let ((ts (make-zoned-datetime 0 0 1 30 3 2014 "Europe/Stockholm")))
+#+nil(let ((ts (make-zoned-datetime 0 0 1 30 3 2014 "Europe/Stockholm")))
   (timestamp+ ts 60 :minute))
 
 (deftest equality-test ()
