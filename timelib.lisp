@@ -8,8 +8,6 @@
    #:datetime
    #:zoned-datetime
    #:zoned-date
-   #:offset-datetime
-   #:offset-date
 
    ;; constructors
    #:make-walltime
@@ -109,27 +107,15 @@ It features zoned timestamps and calculations."))
 (defclass zoned-timestamp ()
   ((timezone :reader timezone-of
              :initform local-time:+utc-zone+
-             :type local-time::timezone))
+             :type (or local-time::timezone integer)
+             :documentation "Timezone can be a LOCAL-TIME::TIMEZONE object, or an offset."))
   (:documentation "A timestamp with timezone. Abstract class."))
-
-(defclass offset-timestamp ()
-  ((offset :reader offset-of
-           :initform 0
-           :type integer))
-  (:documentation "A timestamp with an offset"))
 
 (defclass zoned-datetime (datetime zoned-timestamp)
   ()
   (:documentation "A datetime with a timezone."))
 
-(defclass offset-datetime (datetime offset-timestamp)
-  ()
-  (:documentation "A datetime with an offset"))
-
 (defclass zoned-date (date zoned-timestamp)
-  ())
-
-(defclass offset-date (date offset-timestamp)
   ())
 
 ;; * Constructors
@@ -174,7 +160,25 @@ It features zoned timestamps and calculations."))
 ;; (make-datetime 0 0 0 1 1 2024)
 ;; (make-datetime 0 0 0 30 2 2024)
 
-(defun make-zoned-datetime (seconds minutes hour day month year &optional (timezone local-time:+utc-zone+))
+(defun make-zoned-date (day month year &optional (timezone local-time:*default-timezone*))
+  (unless (local-time::valid-timestamp-p 0 0 0 0 day month year)
+    (error "Invalid date: ~4,'0d-~2,'0d-~2,'0d"
+           year month day))
+  (let ((date (make-instance 'zoned-date)))
+    (setf (slot-value date 'year) year
+          (slot-value date 'month) month
+          (slot-value date 'day) day
+          (slot-value date 'timezone)
+          (etypecase timezone
+            (integer timezone)
+            (local-time::timezone timezone)
+            (string (local-time:find-timezone-by-location-name timezone))))
+    date))
+
+;; (make-zoned-date 1 1 2024)
+;; (make-zoned-date 1 1 2024 0)
+
+(defun make-zoned-datetime (seconds minutes hour day month year &optional (timezone local-time:*default-timezone*))
   (unless (local-time::valid-timestamp-p 0 seconds minutes hour day month year)
     (error "Invalid datetime: ~4,'0d-~2,'0d-~2,'0dT~2,'0d:~2,'0d:~2,'0d"
            year month day hour minutes seconds))
@@ -185,9 +189,11 @@ It features zoned timestamps and calculations."))
           (slot-value datetime 'year) year
           (slot-value datetime 'month) month
           (slot-value datetime 'day) day
-          (slot-value datetime 'timezone) (etypecase timezone
-                                            (local-time::timezone timezone)
-                                            (string (local-time:find-timezone-by-location-name timezone))))
+          (slot-value datetime 'timezone)
+          (etypecase timezone
+            (integer timezone)
+            (local-time::timezone timezone)
+            (string (local-time:find-timezone-by-location-name timezone))))
     datetime))
 
 ;; (make-zoned-datetime 0 0 0 1 1 2024)
@@ -328,8 +334,7 @@ It features zoned timestamps and calculations."))
    :timezone local-time:+utc-zone+))
 
 (defparameter +zoned-date-format+
-  ;; 2008-11-18T02:32:00.586931+01:00
-  (append local-time:+iso-8601-date-format+ (list #\T) (list :gmt-offset-or-z)))
+  (append local-time:+iso-8601-date-format+ (list #\space :gmt-offset-or-z)))
 
 (defmethod format-timestamp (destination (timestamp zoned-date) &rest args)
   (local-time:format-timestring
