@@ -31,7 +31,7 @@
 
   (let ((ts1 (make-zoned-datetime 0 0 1 1 1 2024 "America/Argentina/Buenos_Aires"))
         (ts2 (make-zoned-datetime 0 0 1 1 1 2024 "America/Montevideo")))
-    (is (not (timestamp= ts1 ts2)) "Not equal timestamp different timezone"))
+    (is (timestamp= ts1 ts2) "Equal timestamp. Different timezone name, but same offset"))
 
   (let ((ts1 (make-zoned-datetime 0 0 1 1 1 2024 "America/Argentina/Buenos_Aires"))
         (ts2 (make-zoned-datetime 0 0 1 1 1 2024 "America/Argentina/Buenos_Aires")))
@@ -44,7 +44,7 @@
 
   (let ((ts1 (make-zoned-datetime 0 0 1 1 1 2024 "America/Argentina/Buenos_Aires"))
         (ts2 (make-zoned-datetime 0 0 1 1 1 2024 "America/Montevideo")))
-    (is (not (timestamp= ts1 ts2)) "Not equal timestamp different timezone"))
+    (is (timestamp= ts1 ts2) "Equal timestamp. Different timezone name, but same offset"))
 
   (let ((ts1 (make-zoned-datetime 0 0 1 1 1 2024 "America/Argentina/Buenos_Aires"))
         (ts2 (make-zoned-datetime 0 0 1 1 1 2024 "Europe/Stockholm")))

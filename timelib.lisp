@@ -21,10 +21,12 @@
    #:day-of
    #:month-of
    #:year-of
+   #:datetime->time
+   #:datetime->date
 
    ;; comparisons
    #:timestamp=
-   
+
    ;; calculations
    #:timestamp+
    #:timestamp-
@@ -34,7 +36,7 @@
    #:timestamp-convert
    #:timestamp->local-time
    #:timestamp->universal-time
-   
+
    ;; formatting
    #:format-timestamp
 
@@ -209,6 +211,12 @@ It features zoned timestamps and calculations."))
              (month-of timestamp)
              (year-of timestamp)))
 
+(defun datetime->time (timestamp)
+  (make-walltime
+   (seconds-of timestamp)
+   (minutes-of timestamp)
+   (hour-of timestamp)))
+
 (defgeneric timestamp-convert (timestamp class &rest args)
   (:documentation "Convert between different classes of time types."))
 
@@ -232,12 +240,14 @@ It features zoned timestamps and calculations."))
                  (hour-of timestamp)))
 
 (defgeneric timestamp->local-time (timestamp))
+
 (defmethod timestamp->local-time ((timestamp date))
   (local-time:encode-timestamp
    0 0 0 0
    (day-of timestamp)
    (month-of timestamp)
    (year-of timestamp)))
+
 (defmethod timestamp->local-time ((timestamp zoned-datetime))
   (local-time:encode-timestamp
    0 (seconds-of timestamp)
@@ -502,11 +512,34 @@ It features zoned timestamps and calculations."))
    (timestamp->local-time t1)
    (timestamp->local-time t2)))
 
-(defgeneric timestamp= (t1 t2))
+(defgeneric timestamp= (t1 t2)
+  (:documentation "Compare timestamps for equality"))
+
 (defmethod timestamp= ((t1 timestamp) (t2 timestamp))
-  (local-time:timestamp=
-   (timestamp->local-time t1)
-   (timestamp->local-time t2)))
+  ;; FIXME: equalp for structures is supposed to work
+  ;; but it does not in SBCL??
+  (equalp t1 t2))
+
+;; FIXME: the following shouldn't be needed if equalp above worked ...
+(defmethod timestamp= ((t1 walltime) (t2 walltime))
+  (and (= (seconds-of t1) (seconds-of t2))
+       (= (minutes-of t1) (minutes-of t2))
+       (= (hour-of t1) (hour-of t2))))
+
+(defmethod timestamp= ((t1 date) (t2 date))
+  (and (= (day-of t1) (day-of t2))
+       (= (month-of t1) (month-of t2))
+       (= (year-of t1) (year-of t2))))
+
+(defmethod timestamp= ((t1 datetime) (t2 datetime))
+  (and (timestamp= (datetime->date t1)
+                   (datetime->date t2))
+       (timestamp= (datetime->time t1)
+                   (datetime->time t2))))
+
+(defmethod timestamp= ((t1 zoned-datetime) (t2 zoned-datetime))
+  (local-time:timestamp= (timestamp->local-time t1)
+                         (timestamp->local-time t2)))
 
 #+test(timestamp-compare
        (make-instance 'zoned-datetime :year 2023 :timezone "America/Argentina/Buenos_Aires")
