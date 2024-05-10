@@ -31,12 +31,23 @@
    #:timestamp+
    #:timestamp-
    #:timestamp-difference
+   #:day-of-week
 
    ;; conversions
    #:timestamp-convert
    #:timestamp->local-time
    #:timestamp->universal-time
 
+   ;; constants
+   #:+months-per-year+
+   #:+days-per-week+
+   #:+hours-per-day+
+   #:+minutes-per-day+
+   #:+minutes-per-hour+
+   #:+seconds-per-day+
+   #:+seconds-per-hour+
+   #:+seconds-per-minute+
+   
    ;; formatting
    #:format-timestamp
 
@@ -47,6 +58,18 @@
 It features zoned timestamps and calculations."))
 
 (in-package :timelib)
+
+;; ** Constants
+
+(defconstant +months-per-year+ 12)
+(defconstant +days-per-week+ 7)
+(defconstant +hours-per-day+ 24)
+(defconstant +minutes-per-day+ 1440)
+(defconstant +minutes-per-hour+ 60)
+(defconstant +seconds-per-day+ 86400)
+(defconstant +seconds-per-hour+ 3600)
+(defconstant +seconds-per-minute+ 60)
+(defconstant +day-names+ #.#(:sunday :monday :tuesday :wednesday :thursday :friday :saturday))
 
 ;; ** Timestamp classes
 
@@ -404,6 +427,15 @@ It features zoned timestamps and calculations."))
     (if more
         (apply #'timestamp- new-timestamp (car more) (cadr more) (cddr more))
         new-timestamp)))
+
+(declaim (ftype (function (timestamp &optional (member :number :name))
+                          (or integer keyword))
+                day-of-week))
+(defun day-of-week (timestamp &optional (format :number))
+  (let ((day-of-week (local-time:timestamp-day-of-week (timestamp->local-time timestamp))))
+    (case format
+      (:number day-of-week)
+      (:name (aref +day-names+ day-of-week)))))
 
 #+test
 (let ((day (make-zoned-datetime 0 0 0 1 1 2024)))
