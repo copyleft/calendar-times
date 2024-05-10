@@ -7,6 +7,9 @@
    #:date
    #:datetime
    #:zoned-datetime
+   #:zoned-date
+   #:offset-datetime
+   #:offset-date
 
    ;; constructors
    #:make-walltime
@@ -124,6 +127,9 @@ It features zoned timestamps and calculations."))
   (:documentation "A datetime with an offset"))
 
 (defclass zoned-date (date zoned-timestamp)
+  ())
+
+(defclass offset-date (date offset-timestamp)
   ())
 
 ;; * Constructors
