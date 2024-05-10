@@ -48,6 +48,9 @@
    #:+seconds-per-hour+
    #:+seconds-per-minute+
 
+   ;; operations
+   #:clone-timestamp
+
    ;; utilities
    #:now
    #:today
