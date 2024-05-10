@@ -21,8 +21,8 @@
    #:day-of
    #:month-of
    #:year-of
-   #:datetime->time
-   #:datetime->date
+   #:datetime-time
+   #:datetime-date
 
    ;; comparisons
    #:timestamp=
@@ -206,12 +206,12 @@ It features zoned timestamps and calculations."))
    (year-of timestamp)
    :timezone (timezone-of timestamp)))
 
-(defun datetime->date (timestamp)
+(defun datetime-date (timestamp)
   (make-date (day-of timestamp)
              (month-of timestamp)
              (year-of timestamp)))
 
-(defun datetime->time (timestamp)
+(defun datetime-time (timestamp)
   (make-walltime
    (seconds-of timestamp)
    (minutes-of timestamp)
@@ -532,10 +532,10 @@ It features zoned timestamps and calculations."))
        (= (year-of t1) (year-of t2))))
 
 (defmethod timestamp= ((t1 datetime) (t2 datetime))
-  (and (timestamp= (datetime->date t1)
-                   (datetime->date t2))
-       (timestamp= (datetime->time t1)
-                   (datetime->time t2))))
+  (and (timestamp= (datetime-date t1)
+                   (datetime-date t2))
+       (timestamp= (datetime-time t1)
+                   (datetime-time t2))))
 
 (defmethod timestamp= ((t1 zoned-datetime) (t2 zoned-datetime))
   (local-time:timestamp= (timestamp->local-time t1)
