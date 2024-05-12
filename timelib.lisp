@@ -13,6 +13,7 @@
    #:make-walltime
    #:make-date
    #:make-datetime
+   #:make-zoned-date
    #:make-zoned-datetime
 
    ;; accessors
@@ -22,6 +23,7 @@
    #:day-of
    #:month-of
    #:year-of
+   #:timezone-of
    #:datetime-time
    #:datetime-date
 
@@ -116,7 +118,8 @@ It features zoned timestamps and calculations."))
   (:documentation "A datetime with a timezone."))
 
 (defclass zoned-date (date zoned-timestamp)
-  ())
+  ()
+  (:documentation "A date with a timezone."))
 
 ;; * Constructors
 
@@ -238,15 +241,45 @@ It features zoned timestamps and calculations."))
 
 (defun zoned-datetime->local-time (timestamp)
   (check-type timestamp zoned-datetime)
-  (local-time:encode-timestamp
-   0
-   (seconds-of timestamp)
-   (minutes-of timestamp)
-   (hour-of timestamp)
-   (day-of timestamp)
-   (month-of timestamp)
-   (year-of timestamp)
-   :timezone (timezone-of timestamp)))
+  (etypecase (timezone-of timestamp)
+    (integer ;; offset
+     (local-time:encode-timestamp
+      0
+      (seconds-of timestamp)
+      (minutes-of timestamp)
+      (hour-of timestamp)
+      (day-of timestamp)
+      (month-of timestamp)
+      (year-of timestamp)
+      :offset (timezone-of timestamp)))
+    (local-time::timezone
+     (local-time:encode-timestamp
+      0
+      (seconds-of timestamp)
+      (minutes-of timestamp)
+      (hour-of timestamp)
+      (day-of timestamp)
+      (month-of timestamp)
+      (year-of timestamp)
+      :timezone (timezone-of timestamp)))))
+
+(defun zoned-date->local-time (timestamp)
+  (check-type timestamp zoned-date)
+  (etypecase (timezone-of timestamp)
+    (local-time::timezone
+     (local-time:encode-timestamp
+      0 0 0 0
+      (day-of timestamp)
+      (month-of timestamp)
+      (year-of timestamp)
+      :timezone (timezone-of timestamp)))
+    (integer ;; offset
+     (local-time:encode-timestamp
+      0 0 0 0
+      (day-of timestamp)
+      (month-of timestamp)
+      (year-of timestamp)
+      :offset (timezone-of timestamp)))))
 
 (defun datetime-date (timestamp)
   (make-date (day-of timestamp)
@@ -281,24 +314,17 @@ It features zoned timestamps and calculations."))
                  (minutes-of timestamp)
                  (hour-of timestamp)))
 
-(defgeneric timestamp->local-time (timestamp))
+(defgeneric timestamp->local-time (timestamp)
+  (:documentation "Generic timestamp to local-time conversion."))
 
 (defmethod timestamp->local-time ((timestamp date))
-  (local-time:encode-timestamp
-   0 0 0 0
-   (day-of timestamp)
-   (month-of timestamp)
-   (year-of timestamp)))
+  (date->local-time timestamp))
+
+(defmethod timestamp->local-time ((timestamp zoned-date))
+  (zoned-date->local-time timestamp))
 
 (defmethod timestamp->local-time ((timestamp zoned-datetime))
-  (local-time:encode-timestamp
-   0 (seconds-of timestamp)
-   (minutes-of timestamp)
-   (hour-of timestamp)
-   (day-of timestamp)
-   (month-of timestamp)
-   (year-of timestamp)
-   :timezone (timezone-of timestamp)))
+  (zoned-datetime->local-time timestamp))
 
 (defun local-time->date (timestamp)
   (make-date (local-time:timestamp-day timestamp)
@@ -324,7 +350,11 @@ It features zoned timestamps and calculations."))
    :timezone (timezone-of timestamp))
   (uiop:with-output (out destination)
     (write-char #\space out)
-    (write-string (local-time::timezone-name (timezone-of timestamp)) out)))
+    (etypecase (timezone-of timestamp)
+      (integer ;; offset
+       (princ (timezone-of timestamp) out))
+      (local-time::timezone
+       (write-string (local-time::timezone-name (timezone-of timestamp)) out)))))
 
 (defmethod format-timestamp (destination (timestamp date) &rest args)
   (local-time:format-timestring
@@ -340,7 +370,7 @@ It features zoned timestamps and calculations."))
   (local-time:format-timestring
    destination
    (date->local-time timestamp)
-   :timezone (timezone-of timestamp)
+   ;;:timezone (timezone-of timestamp)
    :format +zoned-date-format+))
 
 (defmethod format-timestamp (destination (timestamp walltime) &rest args)
