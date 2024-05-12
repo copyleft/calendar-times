@@ -57,7 +57,7 @@
    ;; utilities
    #:now
    #:today
-   
+
    ;; formatting
    #:format-timestamp
 
@@ -205,6 +205,10 @@ It features zoned timestamps and calculations."))
 
 ;; ** Conversions
 
+(defun timestamp->universal-time (timestamp)
+  (local-time:timestamp-to-universal
+   (timestamp->local-time timestamp)))
+
 (defun walltime->local-time (timestamp)
   (local-time:encode-timestamp
    0
@@ -234,10 +238,6 @@ It features zoned timestamps and calculations."))
    (year-of timestamp)
    :timezone timezone
    :offset offset))
-
-(defun datetime->universal (timestamp &optional timezone offset)
-  (local-time:timestamp-to-universal
-   (datetime->local-time timestamp timezone offset)))
 
 (defun zoned-datetime->local-time (timestamp)
   (check-type timestamp zoned-datetime)
@@ -372,6 +372,19 @@ It features zoned timestamps and calculations."))
    (date->local-time timestamp)
    ;;:timezone (timezone-of timestamp)
    :format +zoned-date-format+))
+
+(defparameter +zoned-date-format+ "%F %z")
+
+(defmethod format-timestamp (destination (timestamp zoned-date) &rest args)
+  (cl-strftime:format-time
+   destination
+   +zoned-date-format+
+   (timestamp->universal-time timestamp)
+   (etypecase (timezone-of timestamp)
+     (local-time::timezone
+      (timezone-of timestamp))
+     (integer (local-time::%make-simple-timezone "offset" "OFFSET" (timezone-of timestamp)))
+     )))
 
 (defmethod format-timestamp (destination (timestamp walltime) &rest args)
   (local-time:format-timestring
