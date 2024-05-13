@@ -27,7 +27,7 @@
 ;; https://github.com/dlowe-net/local-time/issues/67
 ;; play with hour between 1 and 2 and observe timezone
 #+nil(let ((ts (make-zoned-datetime 0 0 1 30 3 2014 "Europe/Stockholm")))
-  (timestamp+ ts 60 :minute))
+       (timestamp+ ts 60 :minute))
 
 (deftest equality-test ()
   (let ((ts1 (make-zoned-datetime 0 0 1 1 1 2024 "America/Argentina/Buenos_Aires"))
@@ -63,3 +63,13 @@
   (let ((dt (make-datetime 1 2 3 4 5 2024)))
     (is (timestamp= (timestamp-convert dt 'date)
                     (make-date 4 5 2024)))))
+
+(deftest validation-tests ()
+  (signals error (make-walltime 0 0 -1))
+  (signals error (make-date 30 2 2024))
+  (signals error (make-datetime 0 0 0 30 2 2024)))
+
+(deftest formatting-tests ()
+  (is (string= (let ((time (make-walltime 0 0 1)))
+                 (format-timestamp nil time))
+               "01:00:00")))
