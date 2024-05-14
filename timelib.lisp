@@ -55,6 +55,7 @@
    #:clone-timestamp
 
    ;; utilities
+   #:time-now
    #:now
    #:today
 
@@ -536,7 +537,8 @@ or can be a stream."))
 
 (convert-units 2 :hours :minutes)
 
-(defgeneric timestamp-difference (t1 t2 &optional unit))
+(defgeneric timestamp-difference (t1 t2 &optional unit)
+  (:documentation "Difference between timestamps, in UNITs."))
 
 (defmethod timestamp-difference (t1 t2 &optional unit)
   (let ((seconds (local-time:timestamp-difference
@@ -546,14 +548,20 @@ or can be a stream."))
         (convert-units seconds :seconds unit)
         seconds)))
 
-(defun today ()
-  (let ((now (local-time:now)))
-    (make-date (local-time:timestamp-day now)
-               (local-time:timestamp-month now)
-               (local-time:timestamp-year now))))
+;; ** Utilities 
 
-
-(defun now ()
+;; FIXME: use timezone here 
+(defun time-now (&optional timezone)
+  "The WALLTIME now."
+  (let ((lt-now (local-time:now)))
+    (make-walltime (local-time:timestamp-second lt-now)
+                   (local-time:timestamp-minute lt-now)
+                   (local-time:timestamp-hour lt-now))))
+    
+    
+;; FIXME: use timezone here
+(defun now (&optional timezone)
+  "The DATETIME now."
   (let ((now (local-time:now)))
     (make-zoned-datetime
      (local-time:timestamp-second now)
@@ -563,6 +571,14 @@ or can be a stream."))
      (local-time:timestamp-month now)
      (local-time:timestamp-year now)
      local-time:*default-timezone*)))
+
+;; FIXME: use timezone argument
+(defun today (&optional timezone)
+  "Returns DATE today."
+  (let ((now (local-time:now)))
+    (make-date (local-time:timestamp-day now)
+               (local-time:timestamp-month now)
+               (local-time:timestamp-year now))))
 
 ;; https://stackoverflow.com/questions/11067899/is-there-a-generic-method-for-cloning-clos-objects
 (defgeneric copy-instance (object &rest initargs &key &allow-other-keys)
