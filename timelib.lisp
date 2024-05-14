@@ -122,7 +122,7 @@ It features zoned timestamps and calculations."))
   ()
   (:documentation "A date with a timezone."))
 
-;; * Constructors
+;; ** Constructors
 
 (defun make-walltime (seconds minutes hour)
   "Create a time object."
@@ -195,6 +195,21 @@ It features zoned timestamps and calculations."))
             (local-time::timezone timezone)
             (string (local-time:find-timezone-by-location-name timezone))))
     datetime))
+
+;; ** Accessors
+
+(defun datetime-date (datetime)
+  "Returns the DATE of DATETIME"
+  (make-date (day-of datetime)
+             (month-of datetime)
+             (year-of datetime)))
+
+(defun datetime-time (datetime)
+  "Returns the WALLTIME of DATETIME."
+  (make-walltime
+   (seconds-of datetime)
+   (minutes-of datetime)
+   (hour-of datetime)))
 
 ;; ** Conversions
 
@@ -275,17 +290,6 @@ It features zoned timestamps and calculations."))
       (month-of timestamp)
       (year-of timestamp)
       :offset (timezone-of timestamp)))))
-
-(defun datetime-date (timestamp)
-  (make-date (day-of timestamp)
-             (month-of timestamp)
-             (year-of timestamp)))
-
-(defun datetime-time (timestamp)
-  (make-walltime
-   (seconds-of timestamp)
-   (minutes-of timestamp)
-   (hour-of timestamp)))
 
 (defgeneric timestamp-convert (timestamp class &rest args)
   (:documentation "Convert between different classes of time types."))
