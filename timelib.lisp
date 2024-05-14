@@ -670,6 +670,15 @@ or can be a stream."))
 
 ;; (parse-walltime "03:24:34")
 
+(defun parse-datetime (string)
+  (destructuring-bind (year month day hour minute second &rest args)
+      (local-time::%split-timestring string
+                                     :allow-missing-date-part nil
+                                     :allow-missing-time-part nil
+                                     :allow-missing-timezone-part t)
+    (declare (ignore args))
+    (make-datetime second minute hour day month year)))
+
 (defun parse-zoned-datetime (string)
   (error "TODO"))
 
@@ -688,6 +697,10 @@ or can be a stream."))
 (defmethod parse-timestring ((timestring string) (class (eql 'time)) &rest args)
   (declare (ignore args))
   (parse-walltime timestring))
+
+(defmethod parse-timestring ((timestring string) (class (eql 'datetime)) &rest args)
+  (declare (ignore args))
+  (parse-datetime timestring))
 
 ;; (parse-timestring "01:00:22" 'time)
 
