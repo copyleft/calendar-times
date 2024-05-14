@@ -14,7 +14,10 @@
 (deftest timezones-calc-test ()
   (let ((at-four (make-zoned-datetime 0 0 4 30 3 2014 "Europe/Stockholm"))
         (at-one (make-zoned-datetime 0 0 1 30 3 2014 "Europe/Stockholm")))
-    (is (= (timestamp-difference at-four at-one) 7200)))
+    (is (= (timestamp-difference at-four at-one) 7200))
+    ;; observe the difference in daylight saving time (offset)
+    (is (string= (format-timestamp nil at-four) "2014-03-30T04:00:00+0200 Europe/Stockholm"))
+    (is (string= (format-timestamp nil at-one) "2014-03-30T01:00:00+0100 Europe/Stockholm")))
 
   (let ((ts (make-zoned-datetime 0 0 1 1 1 2024 "America/Argentina/Buenos_Aires"))
         (lt (local-time:encode-timestamp 0 0 0 1 1 1 2024 :timezone (local-time:find-timezone-by-location-name "America/Argentina/Buenos_Aires"))))
@@ -22,12 +25,15 @@
     (is (local-time:timestamp=
          (timestamp->local-time (timestamp+ ts 1 :hour))
          (local-time:timestamp+ (timestamp->local-time ts) 1 :hour)))
-    (is (= 2 (hour-of (timestamp+ ts 1 :hour))))))
+    (is (= 2 (hour-of (timestamp+ ts 1 :hour)))))
 
-;; https://github.com/dlowe-net/local-time/issues/67
-;; play with hour between 1 and 2 and observe timezone
-#+nil(let ((ts (make-zoned-datetime 0 0 1 30 3 2014 "Europe/Stockholm")))
-       (timestamp+ ts 60 :minute))
+  ;; https://github.com/dlowe-net/local-time/issues/67
+  ;; play with hour between 1 and 2 and observe timezone
+  (let ((ts (make-zoned-datetime 0 0 1 30 3 2014 "Europe/Stockholm")))
+    (is (string= (format-timestamp nil (timestamp+ ts 30 :minute))
+                 "2014-03-30T01:30:00+0100 Europe/Stockholm"))
+    (is (string= (format-timestamp nil (timestamp+ ts 60 :minute))
+                 "2014-03-30T03:00:00+0200 Europe/Stockholm"))))
 
 (deftest equality-test ()
   (let ((ts1 (make-zoned-datetime 0 0 1 1 1 2024 "America/Argentina/Buenos_Aires"))
@@ -71,7 +77,7 @@
 
 (deftest formatting-tests ()
   (is (string= (format-timestamp nil (make-walltime 0 0 1))
-                 "01:00:00"))
+               "01:00:00"))
   (is (string= (format-timestamp nil (make-date 1 1 2024))
                "2024-01-01"))
   (is (string= (format-timestamp nil (make-datetime 0 0 0 1 1 2024))
