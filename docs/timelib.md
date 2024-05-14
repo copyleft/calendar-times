@@ -1,22 +1,26 @@
 # TIMELIB
 
-TIMELIB is a calendar time library implemented on top of LOCAL-TIME library.
-
-It features zoned timestamps and calculations.
-
 ## Functions
 ### datetime-date
 
 ```lisp
-(timestamp)
+(datetime)
 ```
+
+Returns the DATE of DATETIME
+
+
 
 
 ### datetime-time
 
 ```lisp
-(timestamp)
+(datetime)
 ```
+
+Returns the WALLTIME of DATETIME.
+
+
 
 
 ### day-of-week
@@ -24,6 +28,11 @@ It features zoned timestamps and calculations.
 ```lisp
 (timestamp &optional (format :number))
 ```
+
+Return day of week of TIMESTAMP.
+FORMAT can be either :NUMBER (default) or :NAME.
+
+
 
 
 ### make-date
@@ -89,6 +98,17 @@ Create a datetime with a timezone.
 ```
 
 
+### time-now
+
+```lisp
+(&optional timezone)
+```
+
+The WALLTIME now.
+
+
+
+
 ### timestamp->universal-time
 
 ```lisp
@@ -103,40 +123,100 @@ Convert TIMESTAMP to UNIVERSAL-TIME.
 ### today
 
 ```lisp
-()
+(&optional timezone)
 ```
+
+Returns DATE today.
+
+
 
 
 ## Generic-Functions
 ### clone-timestamp
-nil
+
+```lisp
+(timestamp &rest args)
+```
+
 
 ### format-timestamp
+
+```lisp
+(destination timestamp &rest args)
+```
+
 Format TIMESTAMP.
-Destination can be T, then timestring is written to \*STANDARD-OUTPUT\*;
+Destination can be T, then timestring is written to *STANDARD-OUTPUT*;
 can be NIL, then a string is returned;
 or can be a stream.
 
+
+
+
 ### parse-timestring
-nil
+
+```lisp
+(timestring class &rest args)
+```
+
 
 ### timestamp+
-nil
+
+```lisp
+(timestamp amount unit &rest more)
+```
+
 
 ### timestamp-
-nil
+
+```lisp
+(timestamp amount unit &rest more)
+```
+
 
 ### timestamp->local-time
+
+```lisp
+(timestamp)
+```
+
 Generic timestamp to local-time conversion.
 
+
+
+
 ### timestamp-convert
+
+```lisp
+(timestamp class &rest args)
+```
+
 Convert between different classes of time types.
 
+
+
+
 ### timestamp-difference
-nil
+
+```lisp
+(t1 t2 &optional unit)
+```
+
+Difference between timestamps, in UNITs.
+
+
+
 
 ### timestamp=
+
+```lisp
+(t1 t2)
+```
+
 Compare timestamps for equality
+
+
+
 
 ## Slot-Accessors
 ### day-of

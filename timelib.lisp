@@ -499,6 +499,8 @@ or can be a stream."))
                           (or integer keyword))
                 day-of-week))
 (defun day-of-week (timestamp &optional (format :number))
+  "Return day of week of TIMESTAMP.
+FORMAT can be either :NUMBER (default) or :NAME."
   (let ((day-of-week (local-time:timestamp-day-of-week (timestamp->local-time timestamp))))
     (case format
       (:number day-of-week)
