@@ -74,6 +74,8 @@
                  "01:00:00"))
   (is (string= (format-timestamp nil (make-date 1 1 2024))
                "2024-01-01"))
+  (is (string= (format-timestamp nil (make-datetime 0 0 0 1 1 2024))
+               "2024-01-01T00:00:00"))
   (is (string= (format-timestamp nil (make-zoned-datetime 0 0 0 1 1 2024 "Europe/Stockholm"))
                "2024-01-01 Europe/Stockholm"))
   (is (string= (format-timestamp nil (make-zoned-datetime 0 0 0 1 1 2024 "America/Argentina/Buenos_Aires"))

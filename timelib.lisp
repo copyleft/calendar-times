@@ -401,15 +401,14 @@ or can be a stream."))
    :format +walltime-format+
    :timezone local-time:+utc-zone+))
 
-(defparameter +iso-8601-datetime-format+
-  ;; 2008-11-18T02:32:00.586931+01:00
-  (append local-time::+iso-8601-date-format+ (list #\T) local-time::+iso-8601-time-format+))
+(defparameter +datetime-format+
+  (append local-time::+iso-8601-date-format+ (list #\T) +walltime-format+))
 
 (defmethod format-timestamp (destination (timestamp datetime) &rest args)
   (local-time:format-timestring
    destination
    (datetime->local-time timestamp)
-   :format +iso-8601-datetime-format+))
+   :format +datetime-format+))
 
 (defmethod print-object ((timestamp timestamp) stream)
   (print-unreadable-object (timestamp stream :type t)
