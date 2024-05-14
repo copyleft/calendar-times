@@ -1,5 +1,9 @@
 # TIMELIB
 
+TIMELIB is a calendar time library implemented on top of LOCAL-TIME library.
+
+It features zoned timestamps and calculations.
+
 ## Functions
 ### datetime-date
 
@@ -94,8 +98,12 @@ Create a datetime with a timezone.
 ### now
 
 ```lisp
-()
+(&optional timezone)
 ```
+
+The DATETIME now.
+
+
 
 
 ### time-now
@@ -220,26 +228,14 @@ Compare timestamps for equality
 
 ## Slot-Accessors
 ### day-of
-nil
-
 ### hour-of
-nil
-
 ### minutes-of
-nil
-
 ### month-of
-nil
-
 ### seconds-of
-nil
-
 ### timezone-of
 Timezone can be a LOCAL-TIME::TIMEZONE object, or an offset.
 
 ### year-of
-nil
-
 ## Classes
 ### date
 A date like 2024-01-01
@@ -261,26 +257,10 @@ A datetime with a timezone.
 
 ## Constants
 ### +days-per-week+
-nil
-
 ### +hours-per-day+
-nil
-
 ### +minutes-per-day+
-nil
-
 ### +minutes-per-hour+
-nil
-
 ### +months-per-year+
-nil
-
 ### +seconds-per-day+
-nil
-
 ### +seconds-per-hour+
-nil
-
 ### +seconds-per-minute+
-nil
-
