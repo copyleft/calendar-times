@@ -80,3 +80,8 @@
                "2024-01-01 Europe/Stockholm"))
   (is (string= (format-timestamp nil (make-zoned-datetime 0 0 0 1 1 2024 "America/Argentina/Buenos_Aires"))
                "2024-01-01 America/Argentina/Buenos_Aires")))
+
+(deftest parsing-tests ()
+  (let ((time (parse-timestring "01:00:22" 'time)))
+    (is (typep time 'walltime))
+    (is (timestamp= time (make-walltime 22 00 01)))))
