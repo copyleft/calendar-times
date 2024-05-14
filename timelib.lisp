@@ -348,17 +348,18 @@ or can be a stream."))
 
 (defmethod format-timestamp (destination (timestamp zoned-datetime) &rest args)
   (declare (ignore args))
-  (local-time:format-timestring
-   destination (zoned-datetime->local-time timestamp)
-   :format local-time:+iso-8601-date-format+
-   :timezone (timezone-of timestamp))
   (uiop:with-output (out destination)
+    (local-time:format-timestring
+     out (zoned-datetime->local-time timestamp)
+     :format local-time:+iso-8601-date-format+
+     :timezone (timezone-of timestamp))
     (write-char #\space out)
     (etypecase (timezone-of timestamp)
       (integer ;; offset
        (princ (timezone-of timestamp) out))
       (local-time::timezone
-       (write-string (local-time::timezone-name (timezone-of timestamp)) out)))))
+       (write-string (local-time::timezone-name (timezone-of timestamp))
+                     out)))))
 
 (defmethod format-timestamp (destination (timestamp date) &rest args)
   (local-time:format-timestring
