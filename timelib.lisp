@@ -124,6 +124,7 @@ It features zoned timestamps and calculations."))
 ;; * Constructors
 
 (defun make-walltime (seconds minutes hour)
+  "Create a time object."
   (unless (local-time::valid-timestamp-p 0 seconds minutes hour 1 1 1970)
     (error "Invalid walltime: ~2,'0d:~2,'0d:~2,'0d" hour minutes seconds))
   (let ((walltime (make-instance 'walltime)))
@@ -132,10 +133,8 @@ It features zoned timestamps and calculations."))
           (slot-value walltime 'seconds) seconds)
     walltime))
 
-;;(make-walltime 0 0 24)
-;;(make-walltime 4 33 1)
-
 (defun make-date (day month year)
+  "Create a date object from DAY, MONTH and YEAR."
   (unless (local-time::valid-timestamp-p 0 0 0 0 day month year)
     (error "Invalid date: ~4,'0d-~2,'0d-~2,'0d" year month day))
   (let ((date (make-instance 'date)))
@@ -144,10 +143,8 @@ It features zoned timestamps and calculations."))
           (slot-value date 'day) day)
     date))
 
-;; (make-date 1 1 2024)
-;; (make-date 30 2 2024)
-
 (defun make-datetime (seconds minutes hour day month year)
+  "Create a date and time object."
   (unless (local-time::valid-timestamp-p 0 seconds minutes hour day month year)
     (error "Invalid datetime: ~4,'0d-~2,'0d-~2,'0dT~2,'0d:~2,'0d:~2,'0d"
            year month day hour minutes seconds))
@@ -164,6 +161,7 @@ It features zoned timestamps and calculations."))
 ;; (make-datetime 0 0 0 30 2 2024)
 
 (defun make-zoned-date (day month year &optional (timezone local-time:*default-timezone*))
+  "Create a date with a timezone."
   (unless (local-time::valid-timestamp-p 0 0 0 0 day month year)
     (error "Invalid date: ~4,'0d-~2,'0d-~2,'0d"
            year month day))
@@ -178,10 +176,8 @@ It features zoned timestamps and calculations."))
             (string (local-time:find-timezone-by-location-name timezone))))
     date))
 
-;; (make-zoned-date 1 1 2024)
-;; (make-zoned-date 1 1 2024 0)
-
 (defun make-zoned-datetime (seconds minutes hour day month year &optional (timezone local-time:*default-timezone*))
+  "Create a datetime with a timezone."
   (unless (local-time::valid-timestamp-p 0 seconds minutes hour day month year)
     (error "Invalid datetime: ~4,'0d-~2,'0d-~2,'0dT~2,'0d:~2,'0d:~2,'0d"
            year month day hour minutes seconds))
@@ -199,17 +195,15 @@ It features zoned timestamps and calculations."))
             (string (local-time:find-timezone-by-location-name timezone))))
     datetime))
 
-;; (make-zoned-datetime 0 0 0 1 1 2024)
-;; (make-zoned-datetime 0 0 0 30 2 2024)
-;; (make-zoned-datetime 0 0 0 1 1 2024 "America/Argentina/Buenos_Aires")
-
 ;; ** Conversions
 
 (defun timestamp->universal-time (timestamp)
+  "Convert TIMESTAMP to UNIVERSAL-TIME."
   (local-time:timestamp-to-universal
    (timestamp->local-time timestamp)))
 
 (defun walltime->local-time (timestamp)
+  "Convert WALLTIME to TIMESTAMP."
   (local-time:encode-timestamp
    0
    (seconds-of timestamp)
