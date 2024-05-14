@@ -351,7 +351,7 @@ or can be a stream."))
   (uiop:with-output (out destination)
     (local-time:format-timestring
      out (zoned-datetime->local-time timestamp)
-     :format local-time:+iso-8601-date-format+
+     :format (append local-time:+iso-8601-date-format+ (list #\T) +walltime-format+)
      :timezone (timezone-of timestamp))
     (write-char #\space out)
     (etypecase (timezone-of timestamp)
@@ -378,18 +378,18 @@ or can be a stream."))
    ;;:timezone (timezone-of timestamp)
    :format +zoned-date-format+))
 
-(defparameter +zoned-date-format+ "%F %z")
+;; (defparameter +zoned-date-format+ "%F %z")
 
-(defmethod format-timestamp (destination (timestamp zoned-date) &rest args)
-  (cl-strftime:format-time
-   destination
-   +zoned-date-format+
-   (timestamp->universal-time timestamp)
-   (etypecase (timezone-of timestamp)
-     (local-time::timezone
-      (timezone-of timestamp))
-     (integer (local-time::%make-simple-timezone "offset" "OFFSET" (timezone-of timestamp)))
-     )))
+;; (defmethod format-timestamp (destination (timestamp zoned-date) &rest args)
+;;   (cl-strftime:format-time
+;;    destination
+;;    +zoned-date-format+
+;;    (timestamp->universal-time timestamp)
+;;    (etypecase (timezone-of timestamp)
+;;      (local-time::timezone
+;;       (timezone-of timestamp))
+;;      (integer (local-time::%make-simple-timezone "offset" "OFFSET" (timezone-of timestamp)))
+;;      )))
 
 (defparameter +walltime-format+
   '((:hour 2) #\: (:min 2) #\: (:sec 2)))
