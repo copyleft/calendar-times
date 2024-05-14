@@ -340,6 +340,15 @@ It features zoned timestamps and calculations."))
 
 ;; ** Formatting
 
+(defparameter +walltime-format+
+  '((:hour 2) #\: (:min 2) #\: (:sec 2)))
+
+(defparameter +datetime-format+
+  (append local-time::+iso-8601-date-format+ (list #\T) +walltime-format+))
+
+(defparameter +zoned-date-format+
+  (append local-time:+iso-8601-date-format+ (list #\space :gmt-offset-or-z)))
+
 (defgeneric format-timestamp (destination timestamp &rest args)
   (:documentation "Format TIMESTAMP.
 Destination can be T, then timestring is written to *STANDARD-OUTPUT*;
@@ -368,9 +377,6 @@ or can be a stream."))
    :format local-time:+iso-8601-date-format+
    :timezone local-time:+utc-zone+))
 
-(defparameter +zoned-date-format+
-  (append local-time:+iso-8601-date-format+ (list #\space :gmt-offset-or-z)))
-
 (defmethod format-timestamp (destination (timestamp zoned-date) &rest args)
   (local-time:format-timestring
    destination
@@ -391,18 +397,12 @@ or can be a stream."))
 ;;      (integer (local-time::%make-simple-timezone "offset" "OFFSET" (timezone-of timestamp)))
 ;;      )))
 
-(defparameter +walltime-format+
-  '((:hour 2) #\: (:min 2) #\: (:sec 2)))
-
 (defmethod format-timestamp (destination (timestamp walltime) &rest args)
   (local-time:format-timestring
    destination
    (walltime->local-time timestamp)
    :format +walltime-format+
    :timezone local-time:+utc-zone+))
-
-(defparameter +datetime-format+
-  (append local-time::+iso-8601-date-format+ (list #\T) +walltime-format+))
 
 (defmethod format-timestamp (destination (timestamp datetime) &rest args)
   (local-time:format-timestring
