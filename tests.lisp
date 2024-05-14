@@ -77,9 +77,9 @@
   (is (string= (format-timestamp nil (make-datetime 0 0 0 1 1 2024))
                "2024-01-01T00:00:00"))
   (is (string= (format-timestamp nil (make-zoned-datetime 0 0 0 1 1 2024 "Europe/Stockholm"))
-               "2024-01-01T00:00:00 Europe/Stockholm"))
+               "2024-01-01T00:00:00+0100 Europe/Stockholm"))
   (is (string= (format-timestamp nil (make-zoned-datetime 0 0 0 1 1 2024 "America/Argentina/Buenos_Aires"))
-               "2024-01-01T00:00:00 America/Argentina/Buenos_Aires")))
+               "2024-01-01T00:00:00-0300 America/Argentina/Buenos_Aires")))
 
 (deftest parsing-tests ()
   (let ((time (parse-timestring "01:00:22" 'time)))

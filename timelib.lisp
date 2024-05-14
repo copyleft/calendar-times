@@ -360,7 +360,7 @@ or can be a stream."))
   (uiop:with-output (out destination)
     (local-time:format-timestring
      out (zoned-datetime->local-time timestamp)
-     :format (append local-time:+iso-8601-date-format+ (list #\T) +walltime-format+)
+     :format (append local-time:+iso-8601-date-format+ (list #\T) +walltime-format+ (list :gmt-offset-hhmm))
      :timezone (timezone-of timestamp))
     (write-char #\space out)
     (etypecase (timezone-of timestamp)
