@@ -554,17 +554,17 @@ FORMAT can be either :NUMBER (default) or :NAME."
         (convert-units seconds :seconds unit)
         seconds)))
 
-;; ** Utilities 
+;; ** Utilities
 
-;; FIXME: use timezone here 
+;; FIXME: use timezone here
 (defun time-now (&optional timezone)
   "The WALLTIME now."
   (let ((lt-now (local-time:now)))
     (make-walltime (local-time:timestamp-second lt-now)
                    (local-time:timestamp-minute lt-now)
                    (local-time:timestamp-hour lt-now))))
-    
-    
+
+
 ;; FIXME: use timezone here
 (defun now (&optional timezone)
   "The DATETIME now."
@@ -578,13 +578,27 @@ FORMAT can be either :NUMBER (default) or :NAME."
      (local-time:timestamp-year now)
      local-time:*default-timezone*)))
 
-;; FIXME: use timezone argument
+(defun ensure-timezone (timezone-or-string)
+  (etypecase timezone-or-string
+    (local-time::timezone timezone-or-string)
+    (string (local-time:find-timezone-by-location-name timezone-or-string))))
+
 (defun today (&optional timezone)
   "Returns DATE today."
   (let ((now (local-time:now)))
-    (make-date (local-time:timestamp-day now)
-               (local-time:timestamp-month now)
-               (local-time:timestamp-year now))))
+    (if timezone
+        ;; if timezone is given, format local-time binding current timezone,
+        ;; and then split the timestring.
+        ;; not good at all, and there may be better
+        (let ((formatted-using-timezone (local-time:format-timestring nil now :timezone (ensure-timezone timezone))))
+          (destructuring-bind (year month day &rest args)
+              (local-time::%split-timestring formatted-using-timezone)
+            (declare (ignore args))
+            (make-date day month year)))
+        ;; else
+        (make-date (local-time:timestamp-day now)
+                   (local-time:timestamp-month now)
+                   (local-time:timestamp-year now)))))
 
 ;; https://stackoverflow.com/questions/11067899/is-there-a-generic-method-for-cloning-clos-objects
 (defgeneric copy-instance (object &rest initargs &key &allow-other-keys)
