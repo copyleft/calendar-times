@@ -29,7 +29,11 @@
 
    ;; comparisons
    #:timestamp=
-
+   #:timestamp<
+   #:timestamp<=
+   #:timestamp>
+   #:timestamp>=
+   
    ;; calculations
    #:timestamp+
    #:timestamp-
@@ -695,6 +699,22 @@ FORMAT can be either :NUMBER (default) or :NAME."
 #+test(timestamp-compare
        (make-instance 'zoned-datetime :year 2023 :timezone "America/Argentina/Buenos_Aires")
        (make-instance 'zoned-datetime :year 2023))
+
+(defun timestamp> (t1 t2)
+  (local-time:timestamp> (timestamp->local-time t1)
+                         (timestamp->local-time t2)))
+
+(defun timestamp>= (t1 t2)
+  (local-time:timestamp>= (timestamp->local-time t1)
+                          (timestamp->local-time t2)))
+
+(defun timestamp< (t1 t2)
+  (local-time:timestamp< (timestamp->local-time t1)
+                         (timestamp->local-time t2)))
+
+(defun timestamp<= (t1 t2)
+  (local-time:timestamp<= (timestamp->local-time t1)
+                          (timestamp->local-time t2)))
 
 ;; ** Parsing
 

@@ -128,6 +128,34 @@ Convert TIMESTAMP to UNIVERSAL-TIME.
 
 
 
+### timestamp<
+
+```lisp
+(t1 t2)
+```
+
+
+### timestamp<=
+
+```lisp
+(t1 t2)
+```
+
+
+### timestamp>
+
+```lisp
+(t1 t2)
+```
+
+
+### timestamp>=
+
+```lisp
+(t1 t2)
+```
+
+
 ### today
 
 ```lisp
