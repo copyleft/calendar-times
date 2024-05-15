@@ -142,6 +142,17 @@ Convert TIMESTAMP to UNIVERSAL-TIME.
 ```
 
 
+### timestamp=
+
+```lisp
+(t1 t2)
+```
+
+Returns T when the timestamps represent the same point in time.
+
+
+
+
 ### timestamp>
 
 ```lisp
@@ -195,6 +206,11 @@ or can be a stream.
 (timestring class &rest args)
 ```
 
+Parse TIMESTRING and return an instance of CLASS.
+CLASS should be the class name of one of the subclasses of TIMESTAMP.
+
+
+
 
 ### timestamp+
 
@@ -243,13 +259,16 @@ Difference between timestamps, in UNITs.
 
 
 
-### timestamp=
+### timestamp-equalp
 
 ```lisp
 (t1 t2)
 ```
 
-Compare timestamps for equality
+Compare timestamps for equality.
+This is a structural equality comparison. So, two timestamps that represent
+the same point in time, but differ in one of its elements (for instance, its timezone), are considered different. Use TIMESTAMP= for equality for timestamps that
+represent the same point in time.
 
 
 
