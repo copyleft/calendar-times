@@ -565,10 +565,21 @@ FORMAT can be either :NUMBER (default) or :NAME."
 
 (defun time-now (&optional timezone)
   "The WALLTIME now."
-  (let ((lt-now (local-time:now)))
-    (make-walltime (local-time:timestamp-second lt-now)
-                   (local-time:timestamp-minute lt-now)
-                   (local-time:timestamp-hour lt-now))))
+  (let ((now (local-time:now)))
+    (if timezone
+        ;; if timezone is given, format local-time binding current timezone,
+        ;; and then split the timestring.
+        ;; not good at all, and there may be better
+        (let* ((timezone (ensure-timezone timezone))
+               (formatted-using-timezone (local-time:format-timestring nil now :timezone timezone)))
+          (destructuring-bind (year month day hour minutes seconds &rest args)
+              (local-time::%split-timestring formatted-using-timezone)
+            (declare (ignore args year month day))
+            (make-walltime seconds minutes hour)))
+        ;; else
+        (make-walltime (local-time:timestamp-second now)
+                       (local-time:timestamp-minute now)
+                       (local-time:timestamp-hour now)))))
 
 (defun now (&optional timezone)
   "The ZONED-DATETIME now."
