@@ -101,7 +101,7 @@ Create a datetime with a timezone.
 (&optional timezone)
 ```
 
-The DATETIME now.
+The ZONED-DATETIME now.
 
 
 

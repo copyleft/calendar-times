@@ -196,7 +196,14 @@ It features zoned timestamps and calculations."))
             (string (local-time:find-timezone-by-location-name timezone))))
     datetime))
 
-;; ** Accessors
+;; ** Accessory functions
+
+(defun ensure-timezone (timezone-or-string)
+  (etypecase timezone-or-string
+    (local-time::timezone timezone-or-string)
+    (string (local-time:find-timezone-by-location-name timezone-or-string))))
+
+;; ** Object accessors
 
 (defun datetime-date (datetime)
   "Returns the DATE of DATETIME"
@@ -556,7 +563,6 @@ FORMAT can be either :NUMBER (default) or :NAME."
 
 ;; ** Utilities
 
-;; FIXME: use timezone here
 (defun time-now (&optional timezone)
   "The WALLTIME now."
   (let ((lt-now (local-time:now)))
@@ -564,24 +570,28 @@ FORMAT can be either :NUMBER (default) or :NAME."
                    (local-time:timestamp-minute lt-now)
                    (local-time:timestamp-hour lt-now))))
 
-
-;; FIXME: use timezone here
 (defun now (&optional timezone)
-  "The DATETIME now."
+  "The ZONED-DATETIME now."
   (let ((now (local-time:now)))
-    (make-zoned-datetime
-     (local-time:timestamp-second now)
-     (local-time:timestamp-minute now)
-     (local-time:timestamp-hour now)
-     (local-time:timestamp-day now)
-     (local-time:timestamp-month now)
-     (local-time:timestamp-year now)
-     local-time:*default-timezone*)))
-
-(defun ensure-timezone (timezone-or-string)
-  (etypecase timezone-or-string
-    (local-time::timezone timezone-or-string)
-    (string (local-time:find-timezone-by-location-name timezone-or-string))))
+    (if timezone
+        ;; if timezone is given, format local-time binding current timezone,
+        ;; and then split the timestring.
+        ;; not good at all, and there may be better
+        (let* ((timezone (ensure-timezone timezone))
+               (formatted-using-timezone (local-time:format-timestring nil now :timezone timezone)))
+          (destructuring-bind (year month day hour minutes seconds &rest args)
+              (local-time::%split-timestring formatted-using-timezone)
+            (declare (ignore args))
+            (make-zoned-datetime seconds minutes hour day month year timezone)))
+        ;; else
+        (make-zoned-datetime
+         (local-time:timestamp-second now)
+         (local-time:timestamp-minute now)
+         (local-time:timestamp-hour now)
+         (local-time:timestamp-day now)
+         (local-time:timestamp-month now)
+         (local-time:timestamp-year now)
+         local-time:*default-timezone*))))
 
 (defun today (&optional timezone)
   "Returns DATE today."
