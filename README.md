@@ -98,8 +98,12 @@ Create a datetime with a timezone.
 ### now
 
 ```lisp
-()
+(&optional timezone)
 ```
+
+The ZONED-DATETIME now.
+
+
 
 
 ### time-now
