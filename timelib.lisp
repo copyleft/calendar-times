@@ -28,12 +28,13 @@
    #:datetime-date
 
    ;; comparisons
+   #:timestamp-equalp
    #:timestamp=
    #:timestamp<
    #:timestamp<=
    #:timestamp>
    #:timestamp>=
-   
+
    ;; calculations
    #:timestamp+
    #:timestamp-
@@ -327,6 +328,9 @@ It features zoned timestamps and calculations."))
 (defgeneric timestamp->local-time (timestamp)
   (:documentation "Generic timestamp to local-time conversion."))
 
+(defmethod timestamp->local-time ((timestamp walltime))
+  (walltime->local-time timestamp))
+
 (defmethod timestamp->local-time ((timestamp date))
   (date->local-time timestamp))
 
@@ -537,8 +541,8 @@ FORMAT can be either :NUMBER (default) or :NAME."
 (defmethod convert-units (value (from-unit (eql :seconds)) (to-unit (eql :hours)))
   (convert-units (/ value 60) :minutes :hours))
 
-(convert-units 60 :seconds :minutes)
-(convert-units 7200 :seconds :hours)
+;; (convert-units 60 :seconds :minutes)
+;; (convert-units 7200 :seconds :hours)
 
 (defmethod convert-units (value (from-unit (eql :minutes))
                           (to-unit (eql :seconds)))
@@ -552,7 +556,7 @@ FORMAT can be either :NUMBER (default) or :NAME."
                           (to-unit (eql :seconds)))
   (convert-units (* value 60) :minutes :seconds))
 
-(convert-units 2 :hours :minutes)
+;; (convert-units 2 :hours :minutes)
 
 (defgeneric timestamp-difference (t1 t2 &optional unit)
   (:documentation "Difference between timestamps, in UNITs."))
@@ -667,38 +671,40 @@ FORMAT can be either :NUMBER (default) or :NAME."
    (timestamp->local-time t1)
    (timestamp->local-time t2)))
 
-(defgeneric timestamp= (t1 t2)
-  (:documentation "Compare timestamps for equality"))
+(defgeneric timestamp-equalp (t1 t2)
+  (:documentation "Compare timestamps for equality.
+This is a structural equality comparison. So, two timestamps that represent
+the same point in time, but differ in one of its elements (for instance, its timezone), are considered different. Use TIMESTAMP= for equality for timestamps that
+represent the same point in time."))
 
-(defmethod timestamp= ((t1 timestamp) (t2 timestamp))
-  ;; FIXME: equalp for structures is supposed to work
-  ;; but it does not in SBCL??
+(defmethod timestamp-equalp ((t1 timestamp) (t2 timestamp))
   (equalp t1 t2))
 
-;; FIXME: the following shouldn't be needed if equalp above worked ...
-(defmethod timestamp= ((t1 walltime) (t2 walltime))
+(defmethod timestamp-equalp ((t1 walltime) (t2 walltime))
   (and (= (seconds-of t1) (seconds-of t2))
        (= (minutes-of t1) (minutes-of t2))
        (= (hour-of t1) (hour-of t2))))
 
-(defmethod timestamp= ((t1 date) (t2 date))
+(defmethod timestamp-equalp ((t1 date) (t2 date))
   (and (= (day-of t1) (day-of t2))
        (= (month-of t1) (month-of t2))
        (= (year-of t1) (year-of t2))))
 
-(defmethod timestamp= ((t1 datetime) (t2 datetime))
-  (and (timestamp= (datetime-date t1)
-                   (datetime-date t2))
-       (timestamp= (datetime-time t1)
-                   (datetime-time t2))))
+(defmethod timestamp-equalp ((t1 datetime) (t2 datetime))
+  (and (timestamp-equalp (datetime-date t1)
+                         (datetime-date t2))
+       (timestamp-equalp (datetime-time t1)
+                         (datetime-time t2))))
 
-(defmethod timestamp= ((t1 zoned-datetime) (t2 zoned-datetime))
+(defmethod timestamp-equalp ((t1 zoned-datetime) (t2 zoned-datetime))
+  (and (timestamp-equalp (datetime-time t1) (datetime-time t2))
+       (timestamp-equalp (datetime-date t2) (datetime-date t2))
+       (equalp (timezone-of t1) (timezone-of t2))))
+
+(defun timestamp= (t1 t2)
+  "Returns T when the timestamps represent the same point in time."
   (local-time:timestamp= (timestamp->local-time t1)
                          (timestamp->local-time t2)))
-
-#+test(timestamp-compare
-       (make-instance 'zoned-datetime :year 2023 :timezone "America/Argentina/Buenos_Aires")
-       (make-instance 'zoned-datetime :year 2023))
 
 (defun timestamp> (t1 t2)
   (local-time:timestamp> (timestamp->local-time t1)
@@ -753,7 +759,9 @@ FORMAT can be either :NUMBER (default) or :NAME."
 (defun parse-zoned-datetime (string)
   (error "TODO"))
 
-(defgeneric parse-timestring (timestring class &rest args))
+(defgeneric parse-timestring (timestring class &rest args)
+  (:documentation "Parse TIMESTRING and return an instance of CLASS.
+CLASS should be the class name of one of the subclasses of TIMESTAMP."))
 
 (defmethod parse-timestring ((timestring string) (class (eql 'date)) &rest args)
   (declare (ignore args))

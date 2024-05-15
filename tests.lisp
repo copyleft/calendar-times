@@ -42,16 +42,21 @@
 
   (let ((ts1 (make-zoned-datetime 0 0 1 1 1 2024 "America/Argentina/Buenos_Aires"))
         (ts2 (make-zoned-datetime 0 0 1 1 1 2024 "America/Montevideo")))
-    (is (timestamp= ts1 ts2) "Equal timestamp. Different timezone name, but same offset"))
+    (is (timestamp= ts1 ts2) "Not equal timestamp, but same point in time.")
+    (is (not (timestamp-equalp ts1 ts2)) "Same point in time, but not equal"))
 
   (let ((ts1 (make-zoned-datetime 0 0 1 1 1 2024 "America/Argentina/Buenos_Aires"))
         (ts2 (make-zoned-datetime 0 0 1 1 1 2024 "America/Argentina/Buenos_Aires")))
-    (is (timestamp= ts1 ts2) "Equal timestamp")))
+    (is (timestamp= ts1 ts2) "Same point in time")
+    (is (timestamp-equalp ts1 ts2) "Timestamps are equal")))
 
 (deftest timezones-test ()
+  ;; These are timestamps with different timezone but same offset
   (let ((ts1 (make-zoned-datetime 0 0 1 1 1 2024 "America/Argentina/Buenos_Aires"))
         (ts2 (make-zoned-datetime 0 0 1 1 1 2024 "America/Montevideo")))
-    (is (zerop (timestamp-difference ts1 ts2))))
+    (is (zerop (timestamp-difference ts1 ts2))) ;; => this is T
+    (timestamp= ts1 ts2) ;; => what should this be?
+    )
 
   (let ((ts1 (make-zoned-datetime 0 0 1 1 1 2024 "America/Argentina/Buenos_Aires"))
         (ts2 (make-zoned-datetime 0 0 1 1 1 2024 "America/Montevideo")))
