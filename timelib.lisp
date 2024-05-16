@@ -336,6 +336,9 @@ The order of the list of values is the same as passed to the constructor functio
       :offset (timezone-of timestamp)))))
 
 (defgeneric timestamp-coerce (timestamp class &rest args)
+  (:method (timestamp class &rest args)
+    (declare (ignore args))
+    (error "Can't coerce ~s to ~s" timestamp class))
   (:documentation "Convert between different classes of time types."))
 
 (defmethod timestamp-coerce ((timestamp datetime) (class (eql 'date)) &rest args)
@@ -721,7 +724,10 @@ FORMAT can be either :NUMBER (default) or :NAME."
     '(setf hour 00)
     ))
 
-(defgeneric %timestamps-compose (t1 t2))
+(defgeneric %timestamps-compose (t1 t2)
+  (:method (t1 t2)
+    (error "Can't compose ~s with ~s" t1 t2)))
+
 (defmethod %timestamps-compose ((t1 date) (t2 walltime))
   (make-datetime (seconds-of t2)
                  (minutes-of t2)
@@ -729,6 +735,7 @@ FORMAT can be either :NUMBER (default) or :NAME."
                  (day-of t1)
                  (month-of t1)
                  (year-of t1)))
+
 (defmethod %timestamps-compose ((t1 walltime) (t2 date))
   (%timestamps-compose t2 t1))
 
