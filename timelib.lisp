@@ -284,7 +284,7 @@ The order of the list of values is the same as passed to the constructor functio
   (local-time:timestamp-to-universal
    (timestamp->local-time timestamp)))
 
-(defun walltime->local-time (timestamp)
+(defun time->local-time (timestamp)
   "Convert WALLTIME to TIMESTAMP."
   (local-time:encode-timestamp
    0
@@ -394,7 +394,7 @@ The order of the list of values is the same as passed to the constructor functio
   (:documentation "Generic timestamp to local-time conversion."))
 
 (defmethod timestamp->local-time ((timestamp walltime))
-  (walltime->local-time timestamp))
+  (time->local-time timestamp))
 
 (defmethod timestamp->local-time ((timestamp date))
   (date->local-time timestamp))
@@ -419,14 +419,17 @@ The order of the list of values is the same as passed to the constructor functio
 
 ;; ** Formatting
 
-(defparameter +walltime-format+
+(defparameter +time-format+
   '((:hour 2) #\: (:min 2) #\: (:sec 2)))
 
+(defparameter +date-format+
+  local-time:+iso-8601-date-format+)
+
 (defparameter +datetime-format+
-  (append local-time::+iso-8601-date-format+ (list #\T) +walltime-format+))
+  (append +date-format+ (list #\T) +time-format+))
 
 (defparameter +zoned-date-format+
-  (append local-time:+iso-8601-date-format+ (list #\space :gmt-offset-or-z)))
+  (append +date-format+ (list #\space :gmt-offset-or-z)))
 
 (defgeneric format-timestamp (destination timestamp &rest args)
   (:documentation "Format TIMESTAMP.
@@ -439,7 +442,7 @@ or can be a stream."))
   (uiop:with-output (out destination)
     (local-time:format-timestring
      out (zoned-datetime->local-time timestamp)
-     :format (append local-time:+iso-8601-date-format+ (list #\T) +walltime-format+ (list :gmt-offset-hhmm))
+     :format (append +date-format+ (list #\T) +time-format+ (list :gmt-offset-hhmm))
      :timezone (if (integerp (timezone-of timestamp))
                    (make-gmt-offset-timezone (timezone-of timestamp))
                    (timezone-of timestamp)))
@@ -452,7 +455,7 @@ or can be a stream."))
   (local-time:format-timestring
    destination
    (date->local-time timestamp)
-   :format local-time:+iso-8601-date-format+
+   :format +date-format+
    :timezone local-time:+utc-zone+))
 
 (defmethod format-timestamp (destination (timestamp zoned-date) &rest args)
@@ -478,8 +481,8 @@ or can be a stream."))
 (defmethod format-timestamp (destination (timestamp walltime) &rest args)
   (local-time:format-timestring
    destination
-   (walltime->local-time timestamp)
-   :format +walltime-format+
+   (time->local-time timestamp)
+   :format +time-format+
    :timezone local-time:+utc-zone+))
 
 (defmethod format-timestamp (destination (timestamp datetime) &rest args)
