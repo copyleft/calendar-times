@@ -70,9 +70,9 @@
         (ts2 (make-zoned-datetime 0 0 1 1 1 2024 "Europe/Stockholm")))
     (is (not (timestamp= ts1 ts2)))))
 
-(deftest conversion-tests ()
+(deftest coercion-tests ()
   (let ((dt (make-datetime 1 2 3 4 5 2024)))
-    (is (timestamp= (timestamp-convert dt 'date)
+    (is (timestamp= (timestamp-coerce dt 'date)
                     (make-date 4 5 2024)))))
 
 (deftest validation-tests ()

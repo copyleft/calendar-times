@@ -42,7 +42,7 @@
    #:day-of-week
 
    ;; conversions
-   #:timestamp-convert
+   #:timestamp-coerce
    #:timestamp->local-time
    #:timestamp->universal-time
 
@@ -303,15 +303,15 @@ It features zoned timestamps and calculations."))
       (year-of timestamp)
       :offset (timezone-of timestamp)))))
 
-(defgeneric timestamp-convert (timestamp class &rest args)
+(defgeneric timestamp-coerce (timestamp class &rest args)
   (:documentation "Convert between different classes of time types."))
 
-(defmethod timestamp-convert ((timestamp datetime) (class (eql 'date)) &rest args)
+(defmethod timestamp-coerce ((timestamp datetime) (class (eql 'date)) &rest args)
   (make-date (day-of timestamp)
              (month-of timestamp)
              (year-of timestamp)))
 
-(defmethod timestamp-convert ((timestamp datetime) (class (eql 'zoned-datetime)) &rest args)
+(defmethod timestamp-coerce ((timestamp datetime) (class (eql 'zoned-datetime)) &rest args)
   (make-zoned-datetime (seconds-of timestamp)
                        (minutes-of timestamp)
                        (hour-of timestamp)
@@ -320,10 +320,18 @@ It features zoned timestamps and calculations."))
                        (year-of timestamp)
                        (or (car args) local-time:+utc-zone+)))
 
-(defmethod timestamp-convert ((timestamp datetime) (class (eql 'time)) &rest args)
+(defmethod timestamp-coerce ((timestamp datetime) (class (eql 'time)) &rest args)
   (make-walltime (seconds-of timestamp)
                  (minutes-of timestamp)
                  (hour-of timestamp)))
+
+(defmethod timestamp-coerce ((timestamp zoned-datetime) (class (eql 'datetime)) &rest args)
+  (make-datetime (seconds-of timestamp)
+                 (minutes-of timestamp)
+                 (hour-of timestamp)
+                 (day-of timestamp)
+                 (month-of timestamp)
+                 (year-of timestamp)))
 
 (defgeneric timestamp->local-time (timestamp)
   (:documentation "Generic timestamp to local-time conversion."))
@@ -663,6 +671,30 @@ FORMAT can be either :NUMBER (default) or :NAME."
 (let* ((d1 (make-instance 'zoned-datetime :year 2023 :timezone "America/Argentina/Buenos_Aires"))
        (d2 (clone-timestamp d1 :timezone "Europe/Stockholm")))
   (list d1 d2))
+
+(defgeneric %timestamps-compose (t1 t2))
+(defmethod %timestamps-compose ((t1 date) (t2 walltime))
+  (make-datetime (seconds-of t2)
+                 (minutes-of t2)
+                 (hour-of t2)
+                 (day-of t1)
+                 (month-of t1)
+                 (year-of t1)))
+(defmethod %timestamps-compose ((t1 walltime) (t2 date))
+  (%timestamps-compose t2 t1))
+
+(defmethod %timestamps-compose ((t1 datetime) (z local-time::timezone))
+  (timestamp-coerce t1 'zoned-datetime z))
+
+(defun timestamps-compose (t1 t2 &rest more)
+  "Compose timestamps.
+
+For example, a date + a time = datetime; a date-time + timezone = zoned-datetime.."
+  (%timestamps-compose t1 t2))
+
+;; (timestamps-compose (today) (time-now))
+;; (timestamps-compose (time-now) (today))
+;; (timestamps-compose (timestamp-coerce (now) 'datetime) local-time:+utc-zone+)
 
 (defgeneric timestamp-compare (t1 t2))
 

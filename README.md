@@ -237,7 +237,7 @@ Generic timestamp to local-time conversion.
 
 
 
-### timestamp-convert
+### timestamp-coerce
 
 ```lisp
 (timestamp class &rest args)
