@@ -440,14 +440,13 @@ or can be a stream."))
     (local-time:format-timestring
      out (zoned-datetime->local-time timestamp)
      :format (append local-time:+iso-8601-date-format+ (list #\T) +walltime-format+ (list :gmt-offset-hhmm))
-     :timezone (timezone-of timestamp))
-    (write-char #\space out)
-    (etypecase (timezone-of timestamp)
-      (integer ;; offset
-       (princ (timezone-of timestamp) out))
-      (local-time::timezone
-       (write-string (local-time::timezone-name (timezone-of timestamp))
-                     out)))))
+     :timezone (if (integerp (timezone-of timestamp))
+                   (make-gmt-offset-timezone (timezone-of timestamp))
+                   (timezone-of timestamp)))
+    (unless (integerp (timezone-of timestamp))
+      (write-char #\space out)
+      (write-string (local-time::timezone-name (timezone-of timestamp))
+                    out))))
 
 (defmethod format-timestamp (destination (timestamp date) &rest args)
   (local-time:format-timestring
