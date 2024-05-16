@@ -129,6 +129,14 @@ It features zoned timestamps and calculations."))
   ()
   (:documentation "A date with a timezone."))
 
+;; ** Utility
+
+(defun ensure-timezone (timezone-or-string)
+  (etypecase timezone-or-string
+    (local-time::timezone timezone-or-string)
+    (string (or (local-time:find-timezone-by-location-name timezone-or-string)
+                (error "Timezone not found: ~s" timezone-or-string)))))
+
 ;; ** Constructors
 
 (defun make-time (seconds minutes hour)
@@ -180,8 +188,7 @@ It features zoned timestamps and calculations."))
           (slot-value date 'timezone)
           (etypecase timezone
             (integer timezone)
-            (local-time::timezone timezone)
-            (string (local-time:find-timezone-by-location-name timezone))))
+            (t (ensure-timezone timezone))))
     date))
 
 (defun make-zoned-datetime (seconds minutes hour day month year &optional (timezone local-time:*default-timezone*))
@@ -199,17 +206,8 @@ It features zoned timestamps and calculations."))
           (slot-value datetime 'timezone)
           (etypecase timezone
             (integer timezone)
-            (local-time::timezone timezone)
-            (string (local-time:find-timezone-by-location-name timezone))))
+            (t (ensure-timezone timezone))))
     datetime))
-
-;; ** Accessory functions
-
-(defun ensure-timezone (timezone-or-string)
-  (etypecase timezone-or-string
-    (local-time::timezone timezone-or-string)
-    (string (or (local-time:find-timezone-by-location-name timezone-or-string)
-                (error "Timezone not found: ~s" timezone-or-string)))))
 
 ;; ** Object accessors
 
@@ -356,8 +354,8 @@ The order of the list of values is the same as passed to the constructor functio
 
 (defmethod timestamp-coerce ((timestamp datetime) (class (eql 'time)) &rest args)
   (make-time (seconds-of timestamp)
-                 (minutes-of timestamp)
-                 (hour-of timestamp)))
+             (minutes-of timestamp)
+             (hour-of timestamp)))
 
 (defmethod timestamp-coerce ((timestamp zoned-datetime) (class (eql 'datetime)) &rest args)
   (make-datetime (seconds-of timestamp)
@@ -389,8 +387,8 @@ The order of the list of values is the same as passed to the constructor functio
 
 (defun local-time->walltime (timestamp)
   (make-time (local-time:timestamp-second timestamp)
-                 (local-time:timestamp-minute timestamp)
-                 (local-time:timestamp-hour timestamp)))
+             (local-time:timestamp-minute timestamp)
+             (local-time:timestamp-hour timestamp)))
 
 (defgeneric local-time->timestamp (local-time timestamp-class))
 
@@ -628,8 +626,8 @@ FORMAT can be either :NUMBER (default) or :NAME."
             (make-time seconds minutes hour)))
         ;; else
         (make-time (local-time:timestamp-second now)
-                       (local-time:timestamp-minute now)
-                       (local-time:timestamp-hour now)))))
+                   (local-time:timestamp-minute now)
+                   (local-time:timestamp-hour now)))))
 
 (defun now (&optional timezone)
   "The ZONED-DATETIME now."
