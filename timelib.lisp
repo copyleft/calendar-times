@@ -688,8 +688,6 @@ FORMAT can be either :NUMBER (default) or :NAME."
                 (slot-value object slot-name))))
       (apply #'reinitialize-instance copy initargs))))
 
-(defun adjust-timestamp (timestamp &rest spec))
-
 (defgeneric clone-timestamp (timestamp &rest args))
 (defmethod clone-timestamp ((timestamp timestamp) &rest args)
   (apply #'copy-instance timestamp args))
@@ -703,6 +701,25 @@ FORMAT can be either :NUMBER (default) or :NAME."
 (let* ((d1 (make-instance 'zoned-datetime :year 2023 :timezone "America/Argentina/Buenos_Aires"))
        (d2 (clone-timestamp d1 :timezone "Europe/Stockholm")))
   (list d1 d2))
+
+(defun adjust-timestamp (timestamp &rest changes)
+  (let ((adjusted-timestamp (clone-timestamp timestamp)))
+    (flet ((apply-change (change args)
+             (ecase change
+               (setf
+                (setf (slot-value adjusted-timestamp (car args))
+                      (cadr args))))))
+      (dolist (change changes)
+        (destructuring-bind (change-name &rest args) change
+          (apply-change change-name args)))
+      adjusted-timestamp)))
+
+#+nil
+(let ((now (now)))
+  (adjust-timestamp now
+    '(setf day 22)
+    '(setf hour 00)
+    ))
 
 (defgeneric %timestamps-compose (t1 t2))
 (defmethod %timestamps-compose ((t1 date) (t2 walltime))
