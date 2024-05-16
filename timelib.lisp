@@ -10,7 +10,7 @@
    #:zoned-date
 
    ;; constructors
-   #:make-walltime
+   #:make-time
    #:make-date
    #:make-datetime
    #:make-zoned-date
@@ -131,7 +131,7 @@ It features zoned timestamps and calculations."))
 
 ;; ** Constructors
 
-(defun make-walltime (seconds minutes hour)
+(defun make-time (seconds minutes hour)
   "Create a time object."
   (unless (local-time::valid-timestamp-p 0 seconds minutes hour 1 1 1970)
     (error "Invalid walltime: ~2,'0d:~2,'0d:~2,'0d" hour minutes seconds))
@@ -220,7 +220,7 @@ It features zoned timestamps and calculations."))
 
 (defun datetime-time (datetime)
   "Returns the WALLTIME of DATETIME."
-  (make-walltime
+  (make-time
    (seconds-of datetime)
    (minutes-of datetime)
    (hour-of datetime)))
@@ -354,7 +354,7 @@ The order of the list of values is the same as passed to the constructor functio
                        (or (car args) local-time:+utc-zone+)))
 
 (defmethod timestamp-coerce ((timestamp datetime) (class (eql 'time)) &rest args)
-  (make-walltime (seconds-of timestamp)
+  (make-time (seconds-of timestamp)
                  (minutes-of timestamp)
                  (hour-of timestamp)))
 
@@ -387,7 +387,7 @@ The order of the list of values is the same as passed to the constructor functio
              (local-time:timestamp-year timestamp)))
 
 (defun local-time->walltime (timestamp)
-  (make-walltime (local-time:timestamp-second timestamp)
+  (make-time (local-time:timestamp-second timestamp)
                  (local-time:timestamp-minute timestamp)
                  (local-time:timestamp-hour timestamp)))
 
@@ -624,9 +624,9 @@ FORMAT can be either :NUMBER (default) or :NAME."
           (destructuring-bind (year month day hour minutes seconds &rest args)
               (local-time::%split-timestring formatted-using-timezone)
             (declare (ignore args year month day))
-            (make-walltime seconds minutes hour)))
+            (make-time seconds minutes hour)))
         ;; else
-        (make-walltime (local-time:timestamp-second now)
+        (make-time (local-time:timestamp-second now)
                        (local-time:timestamp-minute now)
                        (local-time:timestamp-hour now)))))
 
@@ -808,7 +808,7 @@ represent the same point in time."))
                                      :allow-missing-time-part nil
                                      :allow-missing-timezone-part t)
     (declare (ignore year month day args))
-    (make-walltime second minute hour)))
+    (make-time second minute hour)))
 
 ;; (parse-walltime "03:24:34")
 

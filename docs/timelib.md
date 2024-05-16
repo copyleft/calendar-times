@@ -61,7 +61,7 @@ Create a date and time object.
 
 
 
-### make-walltime
+### make-time
 
 ```lisp
 (seconds minutes hour)
