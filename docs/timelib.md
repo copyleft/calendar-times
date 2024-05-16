@@ -167,6 +167,17 @@ Returns T when the timestamps represent the same point in time.
 ```
 
 
+### timestamps-compose
+
+```lisp
+(t1 t2 &rest more)
+```
+
+Compose timestamps.
+
+
+
+For example, a date + a time = datetime; a date-time + timezone = zoned-datetime..
 ### today
 
 ```lisp

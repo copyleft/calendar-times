@@ -42,6 +42,7 @@
    #:day-of-week
 
    ;; conversions
+   #:timestamps-compose
    #:timestamp-coerce
    #:timestamp->local-time
    #:timestamp->universal-time
