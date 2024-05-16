@@ -138,6 +138,18 @@ It features zoned timestamps and calculations."))
     (string (or (local-time:find-timezone-by-location-name timezone-or-string)
                 (error "Timezone not found: ~s" timezone-or-string)))))
 
+(defun make-gmt-offset-timezone (offset)
+  (local-time::%make-simple-timezone
+   (format nil "GMT ~c~d"
+           (if (minusp offset) #\- #\+)
+           (abs offset))
+   (format nil "GMT ~c~d"
+           (if (minusp offset) #\- #\+)
+           (abs offset))
+   offset))
+
+;; (make-gmt-offset-timezone -3)
+
 ;; ** Constructors
 
 (defun make-time (seconds minutes hour)
@@ -619,15 +631,21 @@ FORMAT can be either :NUMBER (default) or :NAME."
   "The WALLTIME now."
   (let ((now (local-time:now)))
     (if timezone
-        ;; if timezone is given, format local-time binding current timezone,
-        ;; and then split the timestring.
-        ;; not good at all, and there may be better
-        (let* ((timezone (ensure-timezone timezone))
-               (formatted-using-timezone (local-time:format-timestring nil now :timezone timezone)))
-          (destructuring-bind (year month day hour minutes seconds &rest args)
-              (local-time::%split-timestring formatted-using-timezone)
-            (declare (ignore args year month day))
-            (make-time seconds minutes hour)))
+        (let ((timestamp-values
+                (coerce
+                 (multiple-value-list
+                  (local-time:decode-timestamp
+                   now
+                   :timezone (if (integerp timezone)
+                                 local-time:+utc-zone+
+                                 (ensure-timezone timezone))
+                   ;; FIXME: offset doesn't seem to have any effect at the moment
+                   ;; should be reported as bug?
+                   :offset (when (integerp timezone) timezone)))
+                 'vector)))
+          (make-time (aref timestamp-values 1)
+                     (aref timestamp-values 2)
+                     (aref timestamp-values 3)))
         ;; else
         (make-time (local-time:timestamp-second now)
                    (local-time:timestamp-minute now)
@@ -637,15 +655,27 @@ FORMAT can be either :NUMBER (default) or :NAME."
   "The ZONED-DATETIME now."
   (let ((now (local-time:now)))
     (if timezone
-        ;; if timezone is given, format local-time binding current timezone,
-        ;; and then split the timestring.
-        ;; not good at all, and there may be better
-        (let* ((timezone (ensure-timezone timezone))
-               (formatted-using-timezone (local-time:format-timestring nil now :timezone timezone)))
-          (destructuring-bind (year month day hour minutes seconds &rest args)
-              (local-time::%split-timestring formatted-using-timezone)
-            (declare (ignore args))
-            (make-zoned-datetime seconds minutes hour day month year timezone)))
+        (let ((timestamp-values
+                (coerce
+                 (multiple-value-list
+                  (local-time:decode-timestamp
+                   now
+                   :timezone (if (integerp timezone)
+                                 local-time:+utc-zone+
+                                 (ensure-timezone timezone))
+                   ;; FIXME: offset doesn't seem to have any effect at the moment
+                   ;; should be reported as bug?
+                   :offset (when (integerp timezone) timezone)))
+                 'vector)))
+          (make-zoned-datetime (aref timestamp-values 1)
+                               (aref timestamp-values 2)
+                               (aref timestamp-values 3)
+                               (aref timestamp-values 4)
+                               (aref timestamp-values 5)
+                               (aref timestamp-values 6)
+                               (if (integerp timezone)
+                                   timezone
+                                   (ensure-timezone timezone))))
         ;; else
         (make-zoned-datetime
          (local-time:timestamp-second now)
@@ -660,14 +690,21 @@ FORMAT can be either :NUMBER (default) or :NAME."
   "Returns DATE today."
   (let ((now (local-time:now)))
     (if timezone
-        ;; if timezone is given, format local-time binding current timezone,
-        ;; and then split the timestring.
-        ;; not good at all, and there may be better
-        (let ((formatted-using-timezone (local-time:format-timestring nil now :timezone (ensure-timezone timezone))))
-          (destructuring-bind (year month day &rest args)
-              (local-time::%split-timestring formatted-using-timezone)
-            (declare (ignore args))
-            (make-date day month year)))
+        (let ((timestamp-values
+                (coerce
+                 (multiple-value-list
+                  (local-time:decode-timestamp
+                   now
+                   :timezone (if (integerp timezone)
+                                 local-time:+utc-zone+
+                                 (ensure-timezone timezone))
+                   ;; FIXME: offset doesn't seem to have any effect at the moment
+                   ;; should be reported as bug?
+                   :offset (when (integerp timezone) timezone)))
+                 'vector)))
+          (make-date (aref timestamp-values 4)
+                     (aref timestamp-values 5)
+                     (aref timestamp-values 6)))
         ;; else
         (make-date (local-time:timestamp-day now)
                    (local-time:timestamp-month now)
@@ -721,9 +758,9 @@ FORMAT can be either :NUMBER (default) or :NAME."
 #+nil
 (let ((now (now)))
   (timestamp-adjust now
-    '(setf day 22)
-    '(setf hour 00)
-    ))
+                    '(setf day 22)
+                    '(setf hour 00)
+                    ))
 
 (defgeneric %timestamps-compose (t1 t2)
   (:method (t1 t2)
