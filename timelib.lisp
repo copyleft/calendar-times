@@ -208,7 +208,8 @@ It features zoned timestamps and calculations."))
 (defun ensure-timezone (timezone-or-string)
   (etypecase timezone-or-string
     (local-time::timezone timezone-or-string)
-    (string (local-time:find-timezone-by-location-name timezone-or-string))))
+    (string (or (local-time:find-timezone-by-location-name timezone-or-string)
+                (error "Timezone not found: ~s" timezone-or-string)))))
 
 ;; ** Object accessors
 
