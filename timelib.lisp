@@ -742,6 +742,12 @@ FORMAT can be either :NUMBER (default) or :NAME."
 (defmethod %timestamps-compose ((t1 datetime) (z local-time::timezone))
   (timestamp-coerce t1 'zoned-datetime z))
 
+(defmethod %timestamps-compose ((t1 datetime) (t2 date))
+  (%timestamps-compose t2 (datetime-time t1)))
+
+(defmethod %timestamps-compose ((t1 datetime) (t2 walltime))
+  (%timestamps-compose (datetime-date t1) t2))
+
 (defun timestamps-compose (t1 t2 &rest more)
   "Compose timestamps.
 
