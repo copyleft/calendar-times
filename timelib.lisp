@@ -138,17 +138,26 @@ It features zoned timestamps and calculations."))
     (string (or (local-time:find-timezone-by-location-name timezone-or-string)
                 (error "Timezone not found: ~s" timezone-or-string)))))
 
+(defun offset->string (offset)
+  "Format OFFSET. OFFSET is in seconds."
+  (multiple-value-bind (offset-hours offset-secs)
+      (truncate offset +seconds-per-hour+)
+    (declare (fixnum offset-hours offset-secs))
+    (format nil "~c~2,'0d~:[:~;~]~2,'0d"
+            (if (minusp offset) #\- #\+)
+            (abs offset-hours)
+            nil
+            (round (abs offset-secs)
+                   local-time:+seconds-per-minute+))))
+
 (defun make-gmt-offset-timezone (offset)
+  "Create a GMT + OFFSET timezone. OFFSET is in seconds."
   (local-time::%make-simple-timezone
-   (format nil "GMT ~c~d"
-           (if (minusp offset) #\- #\+)
-           (abs offset))
-   (format nil "GMT ~c~d"
-           (if (minusp offset) #\- #\+)
-           (abs offset))
+   (format nil "GMT ~a" (offset->string offset))
+   (format nil "GMT ~a" (offset->string offset))
    offset))
 
-;; (make-gmt-offset-timezone -3)
+;; (make-gmt-offset-timezone (* -3600 3))
 
 ;; ** Constructors
 
@@ -639,8 +648,6 @@ FORMAT can be either :NUMBER (default) or :NAME."
                    :timezone (if (integerp timezone)
                                  local-time:+utc-zone+
                                  (ensure-timezone timezone))
-                   ;; FIXME: offset doesn't seem to have any effect at the moment
-                   ;; should be reported as bug?
                    :offset (when (integerp timezone) timezone)))
                  'vector)))
           (make-time (aref timestamp-values 1)
@@ -663,8 +670,6 @@ FORMAT can be either :NUMBER (default) or :NAME."
                    :timezone (if (integerp timezone)
                                  local-time:+utc-zone+
                                  (ensure-timezone timezone))
-                   ;; FIXME: offset doesn't seem to have any effect at the moment
-                   ;; should be reported as bug?
                    :offset (when (integerp timezone) timezone)))
                  'vector)))
           (make-zoned-datetime (aref timestamp-values 1)
@@ -698,8 +703,6 @@ FORMAT can be either :NUMBER (default) or :NAME."
                    :timezone (if (integerp timezone)
                                  local-time:+utc-zone+
                                  (ensure-timezone timezone))
-                   ;; FIXME: offset doesn't seem to have any effect at the moment
-                   ;; should be reported as bug?
                    :offset (when (integerp timezone) timezone)))
                  'vector)))
           (make-date (aref timestamp-values 4)
