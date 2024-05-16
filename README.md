@@ -128,6 +128,13 @@ Convert TIMESTAMP to UNIVERSAL-TIME.
 
 
 
+### timestamp-adjust
+
+```lisp
+(timestamp &rest changes)
+```
+
+
 ### timestamp<
 
 ```lisp

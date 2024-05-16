@@ -43,6 +43,7 @@
    #:day-of-week
 
    ;; conversions
+   #:timestamp-adjust
    #:timestamps-compose
    #:timestamp-coerce
    #:timestamp->local-time
@@ -705,7 +706,7 @@ FORMAT can be either :NUMBER (default) or :NAME."
        (d2 (clone-timestamp d1 :timezone "Europe/Stockholm")))
   (list d1 d2))
 
-(defun adjust-timestamp (timestamp &rest changes)
+(defun timestamp-adjust (timestamp &rest changes)
   (let ((adjusted-timestamp (clone-timestamp timestamp)))
     (flet ((apply-change (change args)
              (ecase change
@@ -719,7 +720,7 @@ FORMAT can be either :NUMBER (default) or :NAME."
 
 #+nil
 (let ((now (now)))
-  (adjust-timestamp now
+  (timestamp-adjust now
     '(setf day 22)
     '(setf hour 00)
     ))
