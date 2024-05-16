@@ -197,6 +197,18 @@ Returns DATE today.
 ```
 
 
+### decode-timestamp
+
+```lisp
+(timestamp)
+```
+
+Decode a TIMESTAMP parts and return them with VALUES.
+The order of the list of values is the same as passed to the constructor functions.
+
+
+
+
 ### format-timestamp
 
 ```lisp

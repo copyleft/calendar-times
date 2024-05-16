@@ -26,6 +26,7 @@
    #:timezone-of
    #:datetime-time
    #:datetime-date
+   #:decode-timestamp
 
    ;; comparisons
    #:timestamp-equalp
@@ -223,6 +224,37 @@ It features zoned timestamps and calculations."))
    (seconds-of datetime)
    (minutes-of datetime)
    (hour-of datetime)))
+
+(defgeneric decode-timestamp (timestamp)
+  (:documentation "Decode a TIMESTAMP parts and return them with VALUES.
+The order of the list of values is the same as passed to the constructor functions."))
+
+(defmethod decode-timestamp ((time walltime))
+  (values (seconds-of time)
+          (minutes-of time)
+          (hour-of time)))
+
+(defmethod decode-timestamp ((date date))
+  (values (day-of date)
+          (month-of date)
+          (year-of date)))
+
+(defmethod decode-timestamp ((datetime datetime))
+  (values (seconds-of datetime)
+          (minutes-of datetime)
+          (hour-of datetime)
+          (day-of datetime)
+          (month-of datetime)
+          (year-of datetime)))
+
+(defmethod decode-timestamp ((datetime zoned-datetime))
+  (values (seconds-of datetime)
+          (minutes-of datetime)
+          (hour-of datetime)
+          (day-of datetime)
+          (month-of datetime)
+          (year-of datetime)
+          (timezone-of datetime)))
 
 ;; ** Conversions
 
