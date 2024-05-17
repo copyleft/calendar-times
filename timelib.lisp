@@ -434,18 +434,21 @@ The order of the list of values is the same as passed to the constructor functio
 (defparameter +zoned-date-format+
   (append +date-format+ (list #\space :gmt-offset-or-z)))
 
-(defgeneric format-timestamp (destination timestamp &rest args)
+(defparameter +zoned-datetime-format+
+  (append +date-format+ (list #\T) +time-format+ (list :gmt-offset-hhmm)))
+
+(defgeneric format-timestamp (destination timestamp &optional format &rest args)
   (:documentation "Format TIMESTAMP.
 Destination can be T, then timestring is written to *STANDARD-OUTPUT*;
 can be NIL, then a string is returned;
 or can be a stream."))
 
-(defmethod format-timestamp (destination (timestamp zoned-datetime) &rest args)
+(defmethod format-timestamp (destination (timestamp zoned-datetime) &optional (format +zoned-datetime-format+) &rest args)
   (declare (ignore args))
   (uiop:with-output (out destination)
     (local-time:format-timestring
      out (zoned-datetime->local-time timestamp)
-     :format (append +date-format+ (list #\T) +time-format+ (list :gmt-offset-hhmm))
+     :format format
      :timezone (if (integerp (timezone-of timestamp))
                    (make-gmt-offset-timezone (timezone-of timestamp))
                    (timezone-of timestamp)))
@@ -454,21 +457,21 @@ or can be a stream."))
       (write-string (local-time::timezone-name (timezone-of timestamp))
                     out))))
 
-(defmethod format-timestamp (destination (timestamp date) &rest args)
+(defmethod format-timestamp (destination (timestamp date) &optional (format +date-format+) &rest args)
   (declare (ignore args))
   (local-time:format-timestring
    destination
    (date->local-time timestamp)
-   :format +date-format+
+   :format format
    :timezone local-time:+utc-zone+))
 
-(defmethod format-timestamp (destination (timestamp zoned-date) &rest args)
+(defmethod format-timestamp (destination (timestamp zoned-date) &optional (format +zoned-date-format+) &rest args)
   (declare (ignore args))
   (local-time:format-timestring
    destination
    (date->local-time timestamp)
    ;;:timezone (timezone-of timestamp)
-   :format +zoned-date-format+))
+   :format format))
 
 ;; (defparameter +zoned-date-format+ "%F %z")
 
@@ -483,20 +486,20 @@ or can be a stream."))
 ;;      (integer (local-time::%make-simple-timezone "offset" "OFFSET" (timezone-of timestamp)))
 ;;      )))
 
-(defmethod format-timestamp (destination (timestamp walltime) &rest args)
+(defmethod format-timestamp (destination (timestamp walltime) &optional (format +time-format+) &rest args)
   (declare (ignore args))
   (local-time:format-timestring
    destination
    (time->local-time timestamp)
-   :format +time-format+
+   :format format
    :timezone local-time:+utc-zone+))
 
-(defmethod format-timestamp (destination (timestamp datetime) &rest args)
+(defmethod format-timestamp (destination (timestamp datetime) &optional (format +datetime-format+) &rest args)
   (declare (ignore args))
   (local-time:format-timestring
    destination
    (datetime->local-time timestamp)
-   :format +datetime-format+))
+   :format format))
 
 (defmethod print-object ((timestamp timestamp) stream)
   (print-unreadable-object (timestamp stream :type t)
