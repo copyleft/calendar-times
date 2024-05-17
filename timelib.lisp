@@ -364,6 +364,7 @@ The order of the list of values is the same as passed to the constructor functio
   (:documentation "Convert between different classes of time types."))
 
 (defmethod timestamp-coerce ((timestamp datetime) (class (eql 'date)) &rest args)
+  (declare (ignore args))
   (make-date (day-of timestamp)
              (month-of timestamp)
              (year-of timestamp)))
@@ -378,11 +379,13 @@ The order of the list of values is the same as passed to the constructor functio
                        (or (car args) local-time:+utc-zone+)))
 
 (defmethod timestamp-coerce ((timestamp datetime) (class (eql 'time)) &rest args)
+  (declare (ignore args))
   (make-time (seconds-of timestamp)
              (minutes-of timestamp)
              (hour-of timestamp)))
 
 (defmethod timestamp-coerce ((timestamp zoned-datetime) (class (eql 'datetime)) &rest args)
+  (declare (ignore args))
   (make-datetime (seconds-of timestamp)
                  (minutes-of timestamp)
                  (hour-of timestamp)
@@ -452,6 +455,7 @@ or can be a stream."))
                     out))))
 
 (defmethod format-timestamp (destination (timestamp date) &rest args)
+  (declare (ignore args))
   (local-time:format-timestring
    destination
    (date->local-time timestamp)
@@ -459,6 +463,7 @@ or can be a stream."))
    :timezone local-time:+utc-zone+))
 
 (defmethod format-timestamp (destination (timestamp zoned-date) &rest args)
+  (declare (ignore args))
   (local-time:format-timestring
    destination
    (date->local-time timestamp)
@@ -479,6 +484,7 @@ or can be a stream."))
 ;;      )))
 
 (defmethod format-timestamp (destination (timestamp walltime) &rest args)
+  (declare (ignore args))
   (local-time:format-timestring
    destination
    (time->local-time timestamp)
@@ -486,6 +492,7 @@ or can be a stream."))
    :timezone local-time:+utc-zone+))
 
 (defmethod format-timestamp (destination (timestamp datetime) &rest args)
+  (declare (ignore args))
   (local-time:format-timestring
    destination
    (datetime->local-time timestamp)
@@ -873,7 +880,7 @@ represent the same point in time."))
 ;; (parse-date "2014-10-10")
 ;; (parse-date "2014-10-11")
 
-(defun parse-walltime (string)
+(defun parse-time (string)
   (destructuring-bind (year month day hour minute second &rest args)
       (local-time::%split-timestring string
                                      :allow-missing-date-part t
@@ -882,7 +889,7 @@ represent the same point in time."))
     (declare (ignore year month day args))
     (make-time second minute hour)))
 
-;; (parse-walltime "03:24:34")
+;; (parse-time "03:24:34")
 
 (defun parse-datetime (string)
   (destructuring-bind (year month day hour minute second &rest args)
@@ -908,11 +915,11 @@ CLASS should be the class name of one of the subclasses of TIMESTAMP."))
 
 (defmethod parse-timestring ((timestring string) (class (eql 'walltime)) &rest args)
   (declare (ignore args))
-  (parse-walltime timestring))
+  (parse-time timestring))
 
 (defmethod parse-timestring ((timestring string) (class (eql 'time)) &rest args)
   (declare (ignore args))
-  (parse-walltime timestring))
+  (parse-time timestring))
 
 (defmethod parse-timestring ((timestring string) (class (eql 'datetime)) &rest args)
   (declare (ignore args))
