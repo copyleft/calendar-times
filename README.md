@@ -219,7 +219,7 @@ The order of the list of values is the same as passed to the constructor functio
 ### format-timestamp
 
 ```lisp
-(destination timestamp &rest args)
+(destination timestamp &optional format &rest args)
 ```
 
 Format TIMESTAMP.
