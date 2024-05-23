@@ -552,7 +552,10 @@ or can be a stream."))
       (period '(1 :year 2 :month)))
   (apply #'timestamp+ date period))
 
-(defgeneric timestamp- (timestamp amount unit &rest more))
+(defgeneric timestamp- (timestamp amount unit &rest more)
+  (:documentation "Return a new timestamp from TIMESTAMP reduced in AMOUNT UNITs.
+Example:
+(timestamp- (now) 2 :day)"))
 
 (defmethod timestamp- ((timestamp timestamp) amount unit &rest more)
   (let* ((lt (local-time:timestamp- (timestamp->local-time timestamp) amount unit))
@@ -612,26 +615,26 @@ FORMAT can be either :NUMBER (default) or :NAME."
 (defgeneric convert-units (value from-unit to-unit))
 (defmethod convert-units (value (from-unit (eql :seconds))
                           (to-unit (eql :minutes)))
-  (/ value 60))
+  (/ value +seconds-per-minute+))
 (defmethod convert-units (value (from-unit (eql :minutes)) (to-unit (eql :hours)))
-  (/ value 60))
+  (/ value +minutes-per-hour+))
 (defmethod convert-units (value (from-unit (eql :seconds)) (to-unit (eql :hours)))
-  (convert-units (/ value 60) :minutes :hours))
+  (/ value +seconds-per-hour+))
 
 ;; (convert-units 60 :seconds :minutes)
 ;; (convert-units 7200 :seconds :hours)
 
 (defmethod convert-units (value (from-unit (eql :minutes))
                           (to-unit (eql :seconds)))
-  (* value 60))
+  (* value +seconds-per-minute+))
 
 (defmethod convert-units (value (from-unit (eql :hours))
                           (to-unit (eql :minutes)))
-  (* value 60))
+  (* value +minutes-per-hour+))
 
 (defmethod convert-units (value (from-unit (eql :hours))
                           (to-unit (eql :seconds)))
-  (convert-units (* value 60) :minutes :seconds))
+  (* value +seconds-per-hour+))
 
 ;; (convert-units 2 :hours :minutes)
 
@@ -770,7 +773,7 @@ FORMAT can be either :NUMBER (default) or :NAME."
           (apply-change change-name args)))
       adjusted-timestamp)))
 
-#+nil
+#+test
 (let ((now (now)))
   (timestamp-adjust now
                     '(setf day 22)
@@ -927,15 +930,3 @@ CLASS should be the class name of one of the subclasses of TIMESTAMP."))
 (defmethod parse-timestring ((timestring string) (class (eql 'datetime)) &rest args)
   (declare (ignore args))
   (parse-datetime timestring))
-
-;; (parse-timestring "01:00:22" 'time)
-
-;; (let* ((d1 (make-date 2024 1 10))
-;;        (d2 (parse-date (format-timestamp nil d1))))
-;;   (list d1 d2 (timestamp-compare d1 d2)))
-
-;; (let* ((d1 (make-date 2024 1 10))
-;;        (d2 (parse-date (format-timestamp nil d1))))
-;;   (list d1 d2 (timestamp= d1 d2)))
-
-;; (parse-date (format-timestamp nil (make-date 10 1 2024)))

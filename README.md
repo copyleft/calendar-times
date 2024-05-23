@@ -255,6 +255,12 @@ CLASS should be the class name of one of the subclasses of TIMESTAMP.
 (timestamp amount unit &rest more)
 ```
 
+Return a new timestamp from TIMESTAMP reduced in AMOUNT UNITs.
+Example:
+(timestamp- (now) 2 :day)
+
+
+
 
 ### timestamp->local-time
 
