@@ -98,7 +98,9 @@
     (is (timestamp= time (make-time 22 00 01))))
   (let ((timestamps (list (make-time 0 1 2)
                           (make-date 1 2 2000)
-                          (make-datetime 0 1 2 3 4 2005))))
+                          (make-datetime 0 1 2 3 4 2005)
+                          (now "America/Argentina/Buenos_Aires")
+                          (now "Europe/Stockholm"))))
     (dolist (timestamp timestamps)
       (is (timestamp= timestamp
                       (parse-timestring (format-timestamp nil timestamp)

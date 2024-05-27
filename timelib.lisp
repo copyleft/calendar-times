@@ -907,7 +907,16 @@ represent the same point in time."))
     (make-datetime second minute hour day month year)))
 
 (defun parse-zoned-datetime (string)
-  (error "TODO"))
+  ;; Example: Parse 2024-05-27T18:48:39-0300 America/Argentina/Buenos_Aires
+  ;; Before \#space, the datetime+offset. After #\space, the zone name.
+  (destructuring-bind (datetime-string zone-name)
+      (split-sequence:split-sequence #\space string)
+    (destructuring-bind (year month day hour minutes seconds nsec offset-hours offset-minutes)
+        (local-time::%split-timestring datetime-string
+                                       :allow-missing-elements nil)
+      (declare (ignore offset-hours offset-minutes nsec))
+      (make-zoned-datetime seconds minutes hour day month year
+                           (ensure-timezone zone-name)))))
 
 (defgeneric parse-timestring (timestring class &rest args)
   (:documentation "Parse TIMESTRING and return an instance of CLASS.
@@ -930,3 +939,7 @@ CLASS should be the class name of one of the subclasses of TIMESTAMP."))
 (defmethod parse-timestring ((timestring string) (class (eql 'datetime)) &rest args)
   (declare (ignore args))
   (parse-datetime timestring))
+
+(defmethod parse-timestring ((timestring string) (class (eql 'zoned-datetime)) &rest args)
+  (declare (ignore args))
+  (parse-zoned-datetime timestring))
