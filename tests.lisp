@@ -105,3 +105,18 @@
       (is (timestamp= timestamp
                       (parse-timestring (format-timestamp nil timestamp)
                                         (class-name (class-of timestamp))))))))
+
+(deftest decoding-tests ()
+  (let ((date (today)))
+    (is (timestamp-equalp (apply #'make-date (multiple-value-list (decode-timestamp date)))
+                          date)))
+  (let ((time (time-now)))
+    (is (timestamp-equalp (apply #'make-time (multiple-value-list (decode-timestamp time)))
+                          time)))
+  (let ((datetime (timestamp-coerce (now) 'datetime)))
+    (is (timestamp-equalp (apply #'make-datetime (multiple-value-list (decode-timestamp datetime)))
+                          datetime)))
+
+  (let ((zdatetime (now)))
+    (is (timestamp-equalp (apply #'make-zoned-datetime (multiple-value-list (decode-timestamp zdatetime)))
+                          zdatetime))))
