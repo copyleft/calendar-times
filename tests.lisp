@@ -102,9 +102,9 @@
                           (now "America/Argentina/Buenos_Aires")
                           (now "Europe/Stockholm"))))
     (dolist (timestamp timestamps)
-      (is (timestamp= timestamp
-                      (parse-timestring (format-timestamp nil timestamp)
-                                        (class-name (class-of timestamp))))))))
+      (is (timestamp-equalp timestamp
+                            (parse-timestring (format-timestamp nil timestamp)
+                                              (class-name (class-of timestamp))))))))
 
 (deftest decoding-tests ()
   (let ((date (today)))
