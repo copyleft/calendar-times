@@ -2,7 +2,7 @@
   (:use :cl)
   (:export
    ;; classes
-   #:timestamp
+   #:time-entity
    #:walltime
    #:date
    #:datetime
@@ -26,28 +26,28 @@
    #:timezone-of
    #:datetime-time
    #:datetime-date
-   #:decode-timestamp
+   #:decode-time-entity
 
    ;; comparisons
-   #:timestamp-equalp
-   #:timestamp=
-   #:timestamp<
-   #:timestamp<=
-   #:timestamp>
-   #:timestamp>=
+   #:time-entity-equalp
+   #:time-entity=
+   #:time-entity<
+   #:time-entity<=
+   #:time-entity>
+   #:time-entity>=
 
    ;; calculations
-   #:timestamp+
-   #:timestamp-
-   #:timestamp-difference
+   #:time-entity+
+   #:time-entity-
+   #:time-entity-difference
    #:day-of-week
 
    ;; conversions
-   #:timestamp-adjust
-   #:timestamps-compose
-   #:timestamp-coerce
-   #:timestamp->local-time
-   #:timestamp->universal-time
+   #:time-entity-adjust
+   #:time-entities-compose
+   #:time-entity-coerce
+   #:time-entity->local-time
+   #:time-entity->universal-time
 
    ;; constants
    #:+months-per-year+
@@ -60,7 +60,7 @@
    #:+seconds-per-minute+
 
    ;; operations
-   #:clone-timestamp
+   #:clone-time-entity
 
    ;; utilities
    #:time-now
@@ -68,13 +68,13 @@
    #:today
 
    ;; formatting
-   #:format-timestamp
+   #:format-time-entity
 
    ;; parsing
    #:parse-timestring)
   (:documentation "TIMELIB is a calendar time library implemented on top of LOCAL-TIME library.
 
-It features zoned timestamps and calculations."))
+It features zoned time-entities and calculations."))
 
 (in-package :timelib)
 
@@ -90,13 +90,13 @@ It features zoned timestamps and calculations."))
 (defconstant +seconds-per-minute+ 60)
 (defvar +day-names+ #(:sunday :monday :tuesday :wednesday :thursday :friday :saturday))
 
-;; ** Timestamp classes
+;; ** Time-Entity classes
 
-(defclass timestamp ()
+(defclass time-entity ()
   ()
-  (:documentation "Abstract timestamp class"))
+  (:documentation "Abstract time-entity class"))
 
-(defclass walltime (timestamp)
+(defclass walltime (time-entity)
   ((hour :reader hour-of
          :type integer)
    (minutes :reader minutes-of
@@ -105,7 +105,7 @@ It features zoned timestamps and calculations."))
             :type integer))
   (:documentation "Represents a 'wall' time. Like 01:01:22"))
 
-(defclass date (timestamp)
+(defclass date (time-entity)
   ((year :reader year-of)
    (month :reader month-of)
    (day :reader day-of))
@@ -115,18 +115,18 @@ It features zoned timestamps and calculations."))
   ()
   (:documentation "A datetime like 2024-01-01T00:00:00"))
 
-(defclass zoned-timestamp ()
+(defclass zoned-time-entity ()
   ((timezone :reader timezone-of
              :initform local-time:+utc-zone+
              :type (or local-time::timezone integer)
              :documentation "Timezone can be a LOCAL-TIME::TIMEZONE object, or an offset."))
-  (:documentation "A timestamp with timezone. Abstract class."))
+  (:documentation "A time-entity with timezone. Abstract class."))
 
-(defclass zoned-datetime (datetime zoned-timestamp)
+(defclass zoned-datetime (datetime zoned-time-entity)
   ()
   (:documentation "A datetime with a timezone."))
 
-(defclass zoned-date (date zoned-timestamp)
+(defclass zoned-date (date zoned-time-entity)
   ()
   (:documentation "A date with a timezone."))
 
@@ -246,21 +246,21 @@ It features zoned timestamps and calculations."))
    (minutes-of datetime)
    (hour-of datetime)))
 
-(defgeneric decode-timestamp (timestamp)
-  (:documentation "Decode a TIMESTAMP parts and return them with VALUES.
+(defgeneric decode-time-entity (time-entity)
+  (:documentation "Decode a TIME-ENTITY parts and return them with VALUES.
 The order of the list of values is the same as passed to the constructor functions."))
 
-(defmethod decode-timestamp ((time walltime))
+(defmethod decode-time-entity ((time walltime))
   (values (seconds-of time)
           (minutes-of time)
           (hour-of time)))
 
-(defmethod decode-timestamp ((date date))
+(defmethod decode-time-entity ((date date))
   (values (day-of date)
           (month-of date)
           (year-of date)))
 
-(defmethod decode-timestamp ((datetime datetime))
+(defmethod decode-time-entity ((datetime datetime))
   (values (seconds-of datetime)
           (minutes-of datetime)
           (hour-of datetime)
@@ -268,7 +268,7 @@ The order of the list of values is the same as passed to the constructor functio
           (month-of datetime)
           (year-of datetime)))
 
-(defmethod decode-timestamp ((datetime zoned-datetime))
+(defmethod decode-time-entity ((datetime zoned-datetime))
   (values (seconds-of datetime)
           (minutes-of datetime)
           (hour-of datetime)
@@ -279,146 +279,146 @@ The order of the list of values is the same as passed to the constructor functio
 
 ;; ** Conversions
 
-(defun timestamp->universal-time (timestamp)
-  "Convert TIMESTAMP to UNIVERSAL-TIME."
+(defun time-entity->universal-time (time-entity)
+  "Convert TIME-ENTITY to UNIVERSAL-TIME."
   (local-time:timestamp-to-universal
-   (timestamp->local-time timestamp)))
+   (time-entity->local-time time-entity)))
 
-(defun time->local-time (timestamp)
-  "Convert WALLTIME to TIMESTAMP."
+(defun time->local-time (time-entity)
+  "Convert WALLTIME to TIME-ENTITY."
   (local-time:encode-timestamp
    0
-   (seconds-of timestamp)
-   (minutes-of timestamp)
-   (hour-of timestamp)
+   (seconds-of time-entity)
+   (minutes-of time-entity)
+   (hour-of time-entity)
    1 1 1970
    :timezone local-time:+utc-zone+))
 
-(defun date->local-time (timestamp)
+(defun date->local-time (time-entity)
   (local-time:encode-timestamp
    0 0 0 0
-   (day-of timestamp)
-   (month-of timestamp)
-   (year-of timestamp)
+   (day-of time-entity)
+   (month-of time-entity)
+   (year-of time-entity)
    :timezone local-time:+utc-zone+))
 
-(defun datetime->local-time (timestamp &optional (timezone local-time:*default-timezone*) offset)
-  (check-type timestamp datetime)
+(defun datetime->local-time (time-entity &optional (timezone local-time:*default-timezone*) offset)
+  (check-type time-entity datetime)
   (local-time:encode-timestamp
    0
-   (seconds-of timestamp)
-   (minutes-of timestamp)
-   (hour-of timestamp)
-   (day-of timestamp)
-   (month-of timestamp)
-   (year-of timestamp)
+   (seconds-of time-entity)
+   (minutes-of time-entity)
+   (hour-of time-entity)
+   (day-of time-entity)
+   (month-of time-entity)
+   (year-of time-entity)
    :timezone timezone
    :offset offset))
 
-(defun zoned-datetime->local-time (timestamp)
-  (check-type timestamp zoned-datetime)
-  (etypecase (timezone-of timestamp)
+(defun zoned-datetime->local-time (time-entity)
+  (check-type time-entity zoned-datetime)
+  (etypecase (timezone-of time-entity)
     (integer ;; offset
      (local-time:encode-timestamp
       0
-      (seconds-of timestamp)
-      (minutes-of timestamp)
-      (hour-of timestamp)
-      (day-of timestamp)
-      (month-of timestamp)
-      (year-of timestamp)
-      :offset (timezone-of timestamp)))
+      (seconds-of time-entity)
+      (minutes-of time-entity)
+      (hour-of time-entity)
+      (day-of time-entity)
+      (month-of time-entity)
+      (year-of time-entity)
+      :offset (timezone-of time-entity)))
     (local-time::timezone
      (local-time:encode-timestamp
       0
-      (seconds-of timestamp)
-      (minutes-of timestamp)
-      (hour-of timestamp)
-      (day-of timestamp)
-      (month-of timestamp)
-      (year-of timestamp)
-      :timezone (timezone-of timestamp)))))
+      (seconds-of time-entity)
+      (minutes-of time-entity)
+      (hour-of time-entity)
+      (day-of time-entity)
+      (month-of time-entity)
+      (year-of time-entity)
+      :timezone (timezone-of time-entity)))))
 
-(defun zoned-date->local-time (timestamp)
-  (check-type timestamp zoned-date)
-  (etypecase (timezone-of timestamp)
+(defun zoned-date->local-time (time-entity)
+  (check-type time-entity zoned-date)
+  (etypecase (timezone-of time-entity)
     (local-time::timezone
      (local-time:encode-timestamp
       0 0 0 0
-      (day-of timestamp)
-      (month-of timestamp)
-      (year-of timestamp)
-      :timezone (timezone-of timestamp)))
+      (day-of time-entity)
+      (month-of time-entity)
+      (year-of time-entity)
+      :timezone (timezone-of time-entity)))
     (integer ;; offset
      (local-time:encode-timestamp
       0 0 0 0
-      (day-of timestamp)
-      (month-of timestamp)
-      (year-of timestamp)
-      :offset (timezone-of timestamp)))))
+      (day-of time-entity)
+      (month-of time-entity)
+      (year-of time-entity)
+      :offset (timezone-of time-entity)))))
 
-(defgeneric timestamp-coerce (timestamp class &rest args)
-  (:method (timestamp class &rest args)
+(defgeneric time-entity-coerce (time-entity class &rest args)
+  (:method (time-entity class &rest args)
     (declare (ignore args))
-    (error "Can't coerce ~s to ~s" timestamp class))
+    (error "Can't coerce ~s to ~s" time-entity class))
   (:documentation "Convert between different classes of time types."))
 
-(defmethod timestamp-coerce ((timestamp datetime) (class (eql 'date)) &rest args)
+(defmethod time-entity-coerce ((time-entity datetime) (class (eql 'date)) &rest args)
   (declare (ignore args))
-  (make-date (day-of timestamp)
-             (month-of timestamp)
-             (year-of timestamp)))
+  (make-date (day-of time-entity)
+             (month-of time-entity)
+             (year-of time-entity)))
 
-(defmethod timestamp-coerce ((timestamp datetime) (class (eql 'zoned-datetime)) &rest args)
-  (make-zoned-datetime (seconds-of timestamp)
-                       (minutes-of timestamp)
-                       (hour-of timestamp)
-                       (day-of timestamp)
-                       (month-of timestamp)
-                       (year-of timestamp)
+(defmethod time-entity-coerce ((time-entity datetime) (class (eql 'zoned-datetime)) &rest args)
+  (make-zoned-datetime (seconds-of time-entity)
+                       (minutes-of time-entity)
+                       (hour-of time-entity)
+                       (day-of time-entity)
+                       (month-of time-entity)
+                       (year-of time-entity)
                        (or (car args) local-time:+utc-zone+)))
 
-(defmethod timestamp-coerce ((timestamp datetime) (class (eql 'time)) &rest args)
+(defmethod time-entity-coerce ((time-entity datetime) (class (eql 'time)) &rest args)
   (declare (ignore args))
-  (make-time (seconds-of timestamp)
-             (minutes-of timestamp)
-             (hour-of timestamp)))
+  (make-time (seconds-of time-entity)
+             (minutes-of time-entity)
+             (hour-of time-entity)))
 
-(defmethod timestamp-coerce ((timestamp zoned-datetime) (class (eql 'datetime)) &rest args)
+(defmethod time-entity-coerce ((time-entity zoned-datetime) (class (eql 'datetime)) &rest args)
   (declare (ignore args))
-  (make-datetime (seconds-of timestamp)
-                 (minutes-of timestamp)
-                 (hour-of timestamp)
-                 (day-of timestamp)
-                 (month-of timestamp)
-                 (year-of timestamp)))
+  (make-datetime (seconds-of time-entity)
+                 (minutes-of time-entity)
+                 (hour-of time-entity)
+                 (day-of time-entity)
+                 (month-of time-entity)
+                 (year-of time-entity)))
 
-(defgeneric timestamp->local-time (timestamp)
-  (:documentation "Generic timestamp to local-time conversion."))
+(defgeneric time-entity->local-time (time-entity)
+  (:documentation "Generic time-entity to local-time conversion."))
 
-(defmethod timestamp->local-time ((timestamp walltime))
-  (time->local-time timestamp))
+(defmethod time-entity->local-time ((time-entity walltime))
+  (time->local-time time-entity))
 
-(defmethod timestamp->local-time ((timestamp date))
-  (date->local-time timestamp))
+(defmethod time-entity->local-time ((time-entity date))
+  (date->local-time time-entity))
 
-(defmethod timestamp->local-time ((timestamp zoned-date))
-  (zoned-date->local-time timestamp))
+(defmethod time-entity->local-time ((time-entity zoned-date))
+  (zoned-date->local-time time-entity))
 
-(defmethod timestamp->local-time ((timestamp zoned-datetime))
-  (zoned-datetime->local-time timestamp))
+(defmethod time-entity->local-time ((time-entity zoned-datetime))
+  (zoned-datetime->local-time time-entity))
 
-(defun local-time->date (timestamp)
-  (make-date (local-time:timestamp-day timestamp)
-             (local-time:timestamp-month timestamp)
-             (local-time:timestamp-year timestamp)))
+(defun local-time->date (time-entity)
+  (make-date (local-time:timestamp-day time-entity)
+             (local-time:timestamp-month time-entity)
+             (local-time:timestamp-year time-entity)))
 
-(defun local-time->walltime (timestamp)
-  (make-time (local-time:timestamp-second timestamp)
-             (local-time:timestamp-minute timestamp)
-             (local-time:timestamp-hour timestamp)))
+(defun local-time->walltime (time-entity)
+  (make-time (local-time:timestamp-second time-entity)
+             (local-time:timestamp-minute time-entity)
+             (local-time:timestamp-hour time-entity)))
 
-(defgeneric local-time->timestamp (local-time timestamp-class))
+(defgeneric local-time->time-entity (local-time time-entity-class))
 
 ;; ** Formatting
 
@@ -437,179 +437,179 @@ The order of the list of values is the same as passed to the constructor functio
 (defparameter +zoned-datetime-format+
   (append +date-format+ (list #\T) +time-format+ (list :gmt-offset-hhmm)))
 
-(defgeneric format-timestamp (destination timestamp &optional format &rest args)
-  (:documentation "Format TIMESTAMP.
+(defgeneric format-time-entity (destination time-entity &optional format &rest args)
+  (:documentation "Format TIME-ENTITY.
 Destination can be T, then timestring is written to *STANDARD-OUTPUT*;
 can be NIL, then a string is returned;
 or can be a stream."))
 
-(defmethod format-timestamp (destination (timestamp zoned-datetime) &optional (format +zoned-datetime-format+) &rest args)
+(defmethod format-time-entity (destination (time-entity zoned-datetime) &optional (format +zoned-datetime-format+) &rest args)
   (declare (ignore args))
   (uiop:with-output (out destination)
     (local-time:format-timestring
-     out (zoned-datetime->local-time timestamp)
+     out (zoned-datetime->local-time time-entity)
      :format format
-     :timezone (if (integerp (timezone-of timestamp))
-                   (make-gmt-offset-timezone (timezone-of timestamp))
-                   (timezone-of timestamp)))
-    (unless (integerp (timezone-of timestamp))
+     :timezone (if (integerp (timezone-of time-entity))
+                   (make-gmt-offset-timezone (timezone-of time-entity))
+                   (timezone-of time-entity)))
+    (unless (integerp (timezone-of time-entity))
       (write-char #\space out)
-      (write-string (local-time::timezone-name (timezone-of timestamp))
+      (write-string (local-time::timezone-name (timezone-of time-entity))
                     out))))
 
-(defmethod format-timestamp (destination (timestamp date) &optional (format +date-format+) &rest args)
+(defmethod format-time-entity (destination (time-entity date) &optional (format +date-format+) &rest args)
   (declare (ignore args))
   (local-time:format-timestring
    destination
-   (date->local-time timestamp)
+   (date->local-time time-entity)
    :format format
    :timezone local-time:+utc-zone+))
 
-(defmethod format-timestamp (destination (timestamp zoned-date) &optional (format +zoned-date-format+) &rest args)
+(defmethod format-time-entity (destination (time-entity zoned-date) &optional (format +zoned-date-format+) &rest args)
   (declare (ignore args))
   (local-time:format-timestring
    destination
-   (date->local-time timestamp)
-   ;;:timezone (timezone-of timestamp)
+   (date->local-time time-entity)
+   ;;:timezone (timezone-of time-entity)
    :format format))
 
 ;; (defparameter +zoned-date-format+ "%F %z")
 
-;; (defmethod format-timestamp (destination (timestamp zoned-date) &rest args)
+;; (defmethod format-time-entity (destination (time-entity zoned-date) &rest args)
 ;;   (cl-strftime:format-time
 ;;    destination
 ;;    +zoned-date-format+
-;;    (timestamp->universal-time timestamp)
-;;    (etypecase (timezone-of timestamp)
+;;    (time-entity->universal-time time-entity)
+;;    (etypecase (timezone-of time-entity)
 ;;      (local-time::timezone
-;;       (timezone-of timestamp))
-;;      (integer (local-time::%make-simple-timezone "offset" "OFFSET" (timezone-of timestamp)))
+;;       (timezone-of time-entity))
+;;      (integer (local-time::%make-simple-timezone "offset" "OFFSET" (timezone-of time-entity)))
 ;;      )))
 
-(defmethod format-timestamp (destination (timestamp walltime) &optional (format +time-format+) &rest args)
+(defmethod format-time-entity (destination (time-entity walltime) &optional (format +time-format+) &rest args)
   (declare (ignore args))
   (local-time:format-timestring
    destination
-   (time->local-time timestamp)
+   (time->local-time time-entity)
    :format format
    :timezone local-time:+utc-zone+))
 
-(defmethod format-timestamp (destination (timestamp datetime) &optional (format +datetime-format+) &rest args)
+(defmethod format-time-entity (destination (time-entity datetime) &optional (format +datetime-format+) &rest args)
   (declare (ignore args))
   (local-time:format-timestring
    destination
-   (datetime->local-time timestamp)
+   (datetime->local-time time-entity)
    :format format))
 
-(defmethod print-object ((timestamp timestamp) stream)
-  (print-unreadable-object (timestamp stream :type t)
-    (format-timestamp stream timestamp)))
+(defmethod print-object ((time-entity time-entity) stream)
+  (print-unreadable-object (time-entity stream :type t)
+    (format-time-entity stream time-entity)))
 
 ;; ** Calculations
 
-(defgeneric timestamp+ (timestamp amount unit &rest more))
+(defgeneric time-entity+ (time-entity amount unit &rest more))
 
-(defmethod timestamp+ ((timestamp timestamp) amount unit &rest more)
-  (let* ((lt (local-time:timestamp+ (timestamp->local-time timestamp) amount unit))
-         (new-timestamp (local-time->timestamp lt (class-of timestamp))))
+(defmethod time-entity+ ((time-entity time-entity) amount unit &rest more)
+  (let* ((lt (local-time:timestamp+ (time-entity->local-time time-entity) amount unit))
+         (new-time-entity (local-time->time-entity lt (class-of time-entity))))
     (if more
-        (apply #'timestamp+ new-timestamp (car more) (cadr more) (cddr more))
-        new-timestamp)))
+        (apply #'time-entity+ new-time-entity (car more) (cadr more) (cddr more))
+        new-time-entity)))
 
-(defmethod timestamp+ ((timestamp date) amount unit &rest more)
-  (let* ((lt (local-time:timestamp+ (timestamp->local-time timestamp) amount unit))
-         (new-timestamp
+(defmethod time-entity+ ((time-entity date) amount unit &rest more)
+  (let* ((lt (local-time:timestamp+ (time-entity->local-time time-entity) amount unit))
+         (new-time-entity
            (make-date (local-time:timestamp-day lt)
                       (local-time:timestamp-month lt)
                       (local-time:timestamp-year lt))))
     (if more
-        (apply #'timestamp+ new-timestamp (car more) (cadr more) (cddr more))
-        new-timestamp)))
+        (apply #'time-entity+ new-time-entity (car more) (cadr more) (cddr more))
+        new-time-entity)))
 
-(defmethod timestamp+ ((timestamp zoned-datetime) amount unit &rest more)
-  (let* ((lt (local-time:timestamp+ (timestamp->local-time timestamp) amount unit
-                                    (timezone-of timestamp)))
-         (new-timestamp
+(defmethod time-entity+ ((time-entity zoned-datetime) amount unit &rest more)
+  (let* ((lt (local-time:timestamp+ (time-entity->local-time time-entity) amount unit
+                                    (timezone-of time-entity)))
+         (new-time-entity
            (make-zoned-datetime
-            (local-time:timestamp-second lt :timezone (timezone-of timestamp))
-            (local-time:timestamp-minute lt :timezone (timezone-of timestamp))
-            (local-time:timestamp-hour lt :timezone (timezone-of timestamp))
-            (local-time:timestamp-day lt :timezone (timezone-of timestamp))
-            (local-time:timestamp-month lt :timezone (timezone-of timestamp))
-            (local-time:timestamp-year lt :timezone (timezone-of timestamp))
-            (timezone-of timestamp))))
+            (local-time:timestamp-second lt :timezone (timezone-of time-entity))
+            (local-time:timestamp-minute lt :timezone (timezone-of time-entity))
+            (local-time:timestamp-hour lt :timezone (timezone-of time-entity))
+            (local-time:timestamp-day lt :timezone (timezone-of time-entity))
+            (local-time:timestamp-month lt :timezone (timezone-of time-entity))
+            (local-time:timestamp-year lt :timezone (timezone-of time-entity))
+            (timezone-of time-entity))))
     (if more
-        (apply #'timestamp+ new-timestamp (car more) (cadr more) (cddr more))
-        new-timestamp)))
+        (apply #'time-entity+ new-time-entity (car more) (cadr more) (cddr more))
+        new-time-entity)))
 
 #+test
 (let ((day (make-zoned-datetime 0 0 0 1 1 2024)))
-  (timestamp+ day 1 :day 2 :year))
+  (time-entity+ day 1 :day 2 :year))
 
 ;; Use apply for a period language
 #+test
 (let ((date (make-zoned-datetime 0 0 0 1 1 2024))
       (period '(1 :year 2 :month)))
-  (apply #'timestamp+ date period))
+  (apply #'time-entity+ date period))
 
-(defgeneric timestamp- (timestamp amount unit &rest more)
-  (:documentation "Return a new timestamp from TIMESTAMP reduced in AMOUNT UNITs.
+(defgeneric time-entity- (time-entity amount unit &rest more)
+  (:documentation "Return a new time-entity from TIME-ENTITY reduced in AMOUNT UNITs.
 Example:
-(timestamp- (now) 2 :day)"))
+(time-entity- (now) 2 :day)"))
 
-(defmethod timestamp- ((timestamp timestamp) amount unit &rest more)
-  (let* ((lt (local-time:timestamp- (timestamp->local-time timestamp) amount unit))
-         (new-timestamp (local-time->timestamp lt (class-of timestamp))))
+(defmethod time-entity- ((time-entity time-entity) amount unit &rest more)
+  (let* ((lt (local-time:timestamp- (time-entity->local-time time-entity) amount unit))
+         (new-time-entity (local-time->time-entity lt (class-of time-entity))))
     (if more
-        (apply #'timestamp- new-timestamp (car more) (cadr more) (cddr more))
-        new-timestamp)))
+        (apply #'time-entity- new-time-entity (car more) (cadr more) (cddr more))
+        new-time-entity)))
 
-(defmethod timestamp- ((timestamp date) amount unit &rest more)
-  (let* ((lt (local-time:timestamp- (timestamp->local-time timestamp) amount unit))
-         (new-timestamp
+(defmethod time-entity- ((time-entity date) amount unit &rest more)
+  (let* ((lt (local-time:timestamp- (time-entity->local-time time-entity) amount unit))
+         (new-time-entity
            (make-date (local-time:timestamp-day lt)
                       (local-time:timestamp-month lt)
                       (local-time:timestamp-year lt))))
     (if more
-        (apply #'timestamp- new-timestamp (car more) (cadr more) (cddr more))
-        new-timestamp)))
+        (apply #'time-entity- new-time-entity (car more) (cadr more) (cddr more))
+        new-time-entity)))
 
-(defmethod timestamp- ((timestamp zoned-datetime) amount unit &rest more)
-  (let* ((lt (local-time:timestamp- (timestamp->local-time timestamp) amount unit
-                                    (timezone-of timestamp)))
-         (new-timestamp
+(defmethod time-entity- ((time-entity zoned-datetime) amount unit &rest more)
+  (let* ((lt (local-time:timestamp- (time-entity->local-time time-entity) amount unit
+                                    (timezone-of time-entity)))
+         (new-time-entity
            (make-zoned-datetime
-            (local-time:timestamp-second lt :timezone (timezone-of timestamp))
-            (local-time:timestamp-minute lt :timezone (timezone-of timestamp))
-            (local-time:timestamp-hour lt :timezone (timezone-of timestamp))
-            (local-time:timestamp-day lt :timezone (timezone-of timestamp))
-            (local-time:timestamp-month lt :timezone (timezone-of timestamp))
-            (local-time:timestamp-year lt :timezone (timezone-of timestamp))
-            (timezone-of timestamp))))
+            (local-time:timestamp-second lt :timezone (timezone-of time-entity))
+            (local-time:timestamp-minute lt :timezone (timezone-of time-entity))
+            (local-time:timestamp-hour lt :timezone (timezone-of time-entity))
+            (local-time:timestamp-day lt :timezone (timezone-of time-entity))
+            (local-time:timestamp-month lt :timezone (timezone-of time-entity))
+            (local-time:timestamp-year lt :timezone (timezone-of time-entity))
+            (timezone-of time-entity))))
     (if more
-        (apply #'timestamp- new-timestamp (car more) (cadr more) (cddr more))
-        new-timestamp)))
+        (apply #'time-entity- new-time-entity (car more) (cadr more) (cddr more))
+        new-time-entity)))
 
-(declaim (ftype (function (timestamp &optional (member :number :name))
+(declaim (ftype (function (time-entity &optional (member :number :name))
                           (or integer keyword))
                 day-of-week))
-(defun day-of-week (timestamp &optional (format :number))
-  "Return day of week of TIMESTAMP.
+(defun day-of-week (time-entity &optional (format :number))
+  "Return day of week of TIME-ENTITY.
 FORMAT can be either :NUMBER (default) or :NAME."
-  (let ((day-of-week (local-time:timestamp-day-of-week (timestamp->local-time timestamp))))
+  (let ((day-of-week (local-time:timestamp-day-of-week (time-entity->local-time time-entity))))
     (case format
       (:number day-of-week)
       (:name (aref +day-names+ day-of-week)))))
 
 #+test
 (let ((day (make-zoned-datetime 0 0 0 1 1 2024)))
-  (timestamp- day 1 :day 2 :year))
+  (time-entity- day 1 :day 2 :year))
 
 ;; Use apply for a period language
 #+test
 (let ((date (make-zoned-datetime 0 0 0 1 1 2024))
       (period '(1 :year 2 :month)))
-  (apply #'timestamp- date period))
+  (apply #'time-entity- date period))
 
 ;; Naive units conversions. How to improve?
 (defgeneric convert-units (value from-unit to-unit))
@@ -638,13 +638,13 @@ FORMAT can be either :NUMBER (default) or :NAME."
 
 ;; (convert-units 2 :hours :minutes)
 
-(defgeneric timestamp-difference (t1 t2 &optional unit)
-  (:documentation "Difference between timestamps, in UNITs."))
+(defgeneric time-entity-difference (t1 t2 &optional unit)
+  (:documentation "Difference between time-entities, in UNITs."))
 
-(defmethod timestamp-difference (t1 t2 &optional unit)
+(defmethod time-entity-difference (t1 t2 &optional unit)
   (let ((seconds (local-time:timestamp-difference
-                  (timestamp->local-time t1)
-                  (timestamp->local-time t2))))
+                  (time-entity->local-time t1)
+                  (time-entity->local-time t2))))
     (if unit
         (convert-units seconds :seconds unit)
         seconds)))
@@ -655,7 +655,7 @@ FORMAT can be either :NUMBER (default) or :NAME."
   "The WALLTIME now."
   (let ((now (local-time:now)))
     (if timezone
-        (let ((timestamp-values
+        (let ((time-entity-values
                 (coerce
                  (multiple-value-list
                   (local-time:decode-timestamp
@@ -665,9 +665,9 @@ FORMAT can be either :NUMBER (default) or :NAME."
                                  (ensure-timezone timezone))
                    :offset (when (integerp timezone) timezone)))
                  'vector)))
-          (make-time (aref timestamp-values 1)
-                     (aref timestamp-values 2)
-                     (aref timestamp-values 3)))
+          (make-time (aref time-entity-values 1)
+                     (aref time-entity-values 2)
+                     (aref time-entity-values 3)))
         ;; else
         (make-time (local-time:timestamp-second now)
                    (local-time:timestamp-minute now)
@@ -677,7 +677,7 @@ FORMAT can be either :NUMBER (default) or :NAME."
   "The ZONED-DATETIME now."
   (let ((now (local-time:now)))
     (if timezone
-        (let ((timestamp-values
+        (let ((time-entity-values
                 (coerce
                  (multiple-value-list
                   (local-time:decode-timestamp
@@ -687,12 +687,12 @@ FORMAT can be either :NUMBER (default) or :NAME."
                                  (ensure-timezone timezone))
                    :offset (when (integerp timezone) timezone)))
                  'vector)))
-          (make-zoned-datetime (aref timestamp-values 1)
-                               (aref timestamp-values 2)
-                               (aref timestamp-values 3)
-                               (aref timestamp-values 4)
-                               (aref timestamp-values 5)
-                               (aref timestamp-values 6)
+          (make-zoned-datetime (aref time-entity-values 1)
+                               (aref time-entity-values 2)
+                               (aref time-entity-values 3)
+                               (aref time-entity-values 4)
+                               (aref time-entity-values 5)
+                               (aref time-entity-values 6)
                                (if (integerp timezone)
                                    timezone
                                    (ensure-timezone timezone))))
@@ -710,7 +710,7 @@ FORMAT can be either :NUMBER (default) or :NAME."
   "Returns DATE today."
   (let ((now (local-time:now)))
     (if timezone
-        (let ((timestamp-values
+        (let ((time-entity-values
                 (coerce
                  (multiple-value-list
                   (local-time:decode-timestamp
@@ -720,9 +720,9 @@ FORMAT can be either :NUMBER (default) or :NAME."
                                  (ensure-timezone timezone))
                    :offset (when (integerp timezone) timezone)))
                  'vector)))
-          (make-date (aref timestamp-values 4)
-                     (aref timestamp-values 5)
-                     (aref timestamp-values 6)))
+          (make-date (aref time-entity-values 4)
+                     (aref time-entity-values 5)
+                     (aref time-entity-values 6)))
         ;; else
         (make-date (local-time:timestamp-day now)
                    (local-time:timestamp-month now)
@@ -747,44 +747,44 @@ FORMAT can be either :NUMBER (default) or :NAME."
                 (slot-value object slot-name))))
       (apply #'reinitialize-instance copy initargs))))
 
-(defgeneric clone-timestamp (timestamp &rest args))
-(defmethod clone-timestamp ((timestamp timestamp) &rest args)
-  (apply #'copy-instance timestamp args))
+(defgeneric clone-time-entity (time-entity &rest args))
+(defmethod clone-time-entity ((time-entity time-entity) &rest args)
+  (apply #'copy-instance time-entity args))
 
 #+test
 (let* ((d1 (make-date 2024 10 10))
-       (d2 (clone-timestamp d1 :year 2023)))
+       (d2 (clone-time-entity d1 :year 2023)))
   (list d1 d2))
 
 #+test
 (let* ((d1 (make-instance 'zoned-datetime :year 2023 :timezone "America/Argentina/Buenos_Aires"))
-       (d2 (clone-timestamp d1 :timezone "Europe/Stockholm")))
+       (d2 (clone-time-entity d1 :timezone "Europe/Stockholm")))
   (list d1 d2))
 
-(defun timestamp-adjust (timestamp &rest changes)
-  (let ((adjusted-timestamp (clone-timestamp timestamp)))
+(defun time-entity-adjust (time-entity &rest changes)
+  (let ((adjusted-time-entity (clone-time-entity time-entity)))
     (flet ((apply-change (change args)
              (ecase change
                (setf
-                (setf (slot-value adjusted-timestamp (car args))
+                (setf (slot-value adjusted-time-entity (car args))
                       (cadr args))))))
       (dolist (change changes)
         (destructuring-bind (change-name &rest args) change
           (apply-change change-name args)))
-      adjusted-timestamp)))
+      adjusted-time-entity)))
 
 #+test
 (let ((now (now)))
-  (timestamp-adjust now
+  (time-entity-adjust now
                     '(setf day 22)
                     '(setf hour 00)
                     ))
 
-(defgeneric %timestamps-compose (t1 t2)
+(defgeneric %time-entities-compose (t1 t2)
   (:method (t1 t2)
     (error "Can't compose ~s with ~s" t1 t2)))
 
-(defmethod %timestamps-compose ((t1 date) (t2 walltime))
+(defmethod %time-entities-compose ((t1 date) (t2 walltime))
   (make-datetime (seconds-of t2)
                  (minutes-of t2)
                  (hour-of t2)
@@ -792,85 +792,85 @@ FORMAT can be either :NUMBER (default) or :NAME."
                  (month-of t1)
                  (year-of t1)))
 
-(defmethod %timestamps-compose ((t1 walltime) (t2 date))
-  (%timestamps-compose t2 t1))
+(defmethod %time-entities-compose ((t1 walltime) (t2 date))
+  (%time-entities-compose t2 t1))
 
-(defmethod %timestamps-compose ((t1 datetime) (z local-time::timezone))
-  (timestamp-coerce t1 'zoned-datetime z))
+(defmethod %time-entities-compose ((t1 datetime) (z local-time::timezone))
+  (time-entity-coerce t1 'zoned-datetime z))
 
-(defmethod %timestamps-compose ((t1 datetime) (t2 date))
-  (%timestamps-compose t2 (datetime-time t1)))
+(defmethod %time-entities-compose ((t1 datetime) (t2 date))
+  (%time-entities-compose t2 (datetime-time t1)))
 
-(defmethod %timestamps-compose ((t1 datetime) (t2 walltime))
-  (%timestamps-compose (datetime-date t1) t2))
+(defmethod %time-entities-compose ((t1 datetime) (t2 walltime))
+  (%time-entities-compose (datetime-date t1) t2))
 
-(defun timestamps-compose (t1 t2 &rest more)
-  "Compose timestamps.
+(defun time-entities-compose (t1 t2 &rest more)
+  "Compose time-entities.
 
 For example, a date + a time = datetime; a date-time + timezone = zoned-datetime.."
-  (%timestamps-compose t1 t2))
+  (%time-entities-compose t1 t2))
 
-;; (timestamps-compose (today) (time-now))
-;; (timestamps-compose (time-now) (today))
-;; (timestamps-compose (timestamp-coerce (now) 'datetime) local-time:+utc-zone+)
+;; (time-entities-compose (today) (time-now))
+;; (time-entities-compose (time-now) (today))
+;; (time-entities-compose (time-entity-coerce (now) 'datetime) local-time:+utc-zone+)
 
-(defgeneric timestamp-compare (t1 t2))
+(defgeneric time-entity-compare (t1 t2))
 
-(defmethod timestamp-compare ((t1 timestamp) (t2 timestamp))
-  (local-time::%timestamp-compare
-   (timestamp->local-time t1)
-   (timestamp->local-time t2)))
+(defmethod time-entity-compare ((t1 time-entity) (t2 time-entity))
+  (local-time::%time-entity-compare
+   (time-entity->local-time t1)
+   (time-entity->local-time t2)))
 
-(defgeneric timestamp-equalp (t1 t2)
-  (:documentation "Compare timestamps for equality.
-This is a structural equality comparison. So, two timestamps that represent
-the same point in time, but differ in one of its elements (for instance, its timezone), are considered different. Use TIMESTAMP= for equality for timestamps that
+(defgeneric time-entity-equalp (t1 t2)
+  (:documentation "Compare time-entities for equality.
+This is a structural equality comparison. So, two time-entities that represent
+the same point in time, but differ in one of its elements (for instance, its timezone), are considered different. Use TIME-ENTITY= for equality for time-entities that
 represent the same point in time."))
 
-(defmethod timestamp-equalp ((t1 timestamp) (t2 timestamp))
+(defmethod time-entity-equalp ((t1 time-entity) (t2 time-entity))
   (equalp t1 t2))
 
-(defmethod timestamp-equalp ((t1 walltime) (t2 walltime))
+(defmethod time-entity-equalp ((t1 walltime) (t2 walltime))
   (and (= (seconds-of t1) (seconds-of t2))
        (= (minutes-of t1) (minutes-of t2))
        (= (hour-of t1) (hour-of t2))))
 
-(defmethod timestamp-equalp ((t1 date) (t2 date))
+(defmethod time-entity-equalp ((t1 date) (t2 date))
   (and (= (day-of t1) (day-of t2))
        (= (month-of t1) (month-of t2))
        (= (year-of t1) (year-of t2))))
 
-(defmethod timestamp-equalp ((t1 datetime) (t2 datetime))
-  (and (timestamp-equalp (datetime-date t1)
+(defmethod time-entity-equalp ((t1 datetime) (t2 datetime))
+  (and (time-entity-equalp (datetime-date t1)
                          (datetime-date t2))
-       (timestamp-equalp (datetime-time t1)
+       (time-entity-equalp (datetime-time t1)
                          (datetime-time t2))))
 
-(defmethod timestamp-equalp ((t1 zoned-datetime) (t2 zoned-datetime))
-  (and (timestamp-equalp (datetime-time t1) (datetime-time t2))
-       (timestamp-equalp (datetime-date t2) (datetime-date t2))
+(defmethod time-entity-equalp ((t1 zoned-datetime) (t2 zoned-datetime))
+  (and (time-entity-equalp (datetime-time t1) (datetime-time t2))
+       (time-entity-equalp (datetime-date t2) (datetime-date t2))
        (equalp (timezone-of t1) (timezone-of t2))))
 
-(defun timestamp= (t1 t2)
-  "Returns T when the timestamps represent the same point in time."
-  (local-time:timestamp= (timestamp->local-time t1)
-                         (timestamp->local-time t2)))
+(defun time-entity= (t1 t2)
+  "Returns T when the time-entities represent the same point in time."
+  (local-time:timestamp= (time-entity->local-time t1)
+                         (time-entity->local-time t2)))
 
-(defun timestamp> (t1 t2)
-  (local-time:timestamp> (timestamp->local-time t1)
-                         (timestamp->local-time t2)))
+(defun time-entity> (t1 t2)
+  (local-time:timestamp> (time-entity->local-time t1)
+                         (time-entity->local-time t2)))
 
-(defun timestamp>= (t1 t2)
-  (local-time:timestamp>= (timestamp->local-time t1)
-                          (timestamp->local-time t2)))
+(defun time-entity>= (t1 t2)
+  (local-time:timestamp>= (time-entity->local-time t1)
+                          (time-entity->local-time t2)))
 
-(defun timestamp< (t1 t2)
-  (local-time:timestamp< (timestamp->local-time t1)
-                         (timestamp->local-time t2)))
+(defun time-entity< (t1 t2)
+  (local-time:timestamp< (time-entity->local-time t1)
+                         (time-entity->local-time t2)))
 
-(defun timestamp<= (t1 t2)
-  (local-time:timestamp<= (timestamp->local-time t1)
-                          (timestamp->local-time t2)))
+(defun time-entity<= (t1 t2)
+  (local-time:timestamp<= (time-entity->local-time t1)
+                          (time-entity->local-time t2)))
 
 ;; ** Parsing
 
@@ -920,7 +920,7 @@ represent the same point in time."))
 
 (defgeneric parse-timestring (timestring class &rest args)
   (:documentation "Parse TIMESTRING and return an instance of CLASS.
-CLASS should be the class name of one of the subclasses of TIMESTAMP."))
+CLASS should be the class name of one of the subclasses of TIME-ENTITY."))
 
 (defmethod parse-timestring ((timestring string) (class (eql 'date)) &rest args)
   (declare (ignore args))

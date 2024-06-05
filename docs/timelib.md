@@ -2,7 +2,7 @@
 
 TIMELIB is a calendar time library implemented on top of LOCAL-TIME library.
 
-It features zoned timestamps and calculations.
+It features zoned time-entities and calculations.
 
 ## Functions
 ### datetime-date
@@ -30,10 +30,10 @@ Returns the WALLTIME of DATETIME.
 ### day-of-week
 
 ```lisp
-(timestamp &optional (format :number))
+(time-entity &optional (format :number))
 ```
 
-Return day of week of TIMESTAMP.
+Return day of week of TIME-ENTITY.
 FORMAT can be either :NUMBER (default) or :NAME.
 
 
@@ -106,6 +106,74 @@ The ZONED-DATETIME now.
 
 
 
+### time-entities-compose
+
+```lisp
+(t1 t2 &rest more)
+```
+
+Compose time-entities.
+
+
+
+For example, a date + a time = datetime; a date-time + timezone = zoned-datetime..
+### time-entity->universal-time
+
+```lisp
+(time-entity)
+```
+
+Convert TIME-ENTITY to UNIVERSAL-TIME.
+
+
+
+
+### time-entity-adjust
+
+```lisp
+(time-entity &rest changes)
+```
+
+
+### time-entity<
+
+```lisp
+(t1 t2)
+```
+
+
+### time-entity<=
+
+```lisp
+(t1 t2)
+```
+
+
+### time-entity=
+
+```lisp
+(t1 t2)
+```
+
+Returns T when the time-entities represent the same point in time.
+
+
+
+
+### time-entity>
+
+```lisp
+(t1 t2)
+```
+
+
+### time-entity>=
+
+```lisp
+(t1 t2)
+```
+
+
 ### time-now
 
 ```lisp
@@ -117,74 +185,6 @@ The WALLTIME now.
 
 
 
-### timestamp->universal-time
-
-```lisp
-(timestamp)
-```
-
-Convert TIMESTAMP to UNIVERSAL-TIME.
-
-
-
-
-### timestamp-adjust
-
-```lisp
-(timestamp &rest changes)
-```
-
-
-### timestamp<
-
-```lisp
-(t1 t2)
-```
-
-
-### timestamp<=
-
-```lisp
-(t1 t2)
-```
-
-
-### timestamp=
-
-```lisp
-(t1 t2)
-```
-
-Returns T when the timestamps represent the same point in time.
-
-
-
-
-### timestamp>
-
-```lisp
-(t1 t2)
-```
-
-
-### timestamp>=
-
-```lisp
-(t1 t2)
-```
-
-
-### timestamps-compose
-
-```lisp
-(t1 t2 &rest more)
-```
-
-Compose timestamps.
-
-
-
-For example, a date + a time = datetime; a date-time + timezone = zoned-datetime..
 ### today
 
 ```lisp
@@ -197,32 +197,32 @@ Returns DATE today.
 
 
 ## Generic-Functions
-### clone-timestamp
+### clone-time-entity
 
 ```lisp
-(timestamp &rest args)
+(time-entity &rest args)
 ```
 
 
-### decode-timestamp
+### decode-time-entity
 
 ```lisp
-(timestamp)
+(time-entity)
 ```
 
-Decode a TIMESTAMP parts and return them with VALUES.
+Decode a TIME-ENTITY parts and return them with VALUES.
 The order of the list of values is the same as passed to the constructor functions.
 
 
 
 
-### format-timestamp
+### format-time-entity
 
 ```lisp
-(destination timestamp &optional format &rest args)
+(destination time-entity &optional format &rest args)
 ```
 
-Format TIMESTAMP.
+Format TIME-ENTITY.
 Destination can be T, then timestring is written to *STANDARD-OUTPUT*;
 can be NIL, then a string is returned;
 or can be a stream.
@@ -237,46 +237,46 @@ or can be a stream.
 ```
 
 Parse TIMESTRING and return an instance of CLASS.
-CLASS should be the class name of one of the subclasses of TIMESTAMP.
+CLASS should be the class name of one of the subclasses of TIME-ENTITY.
 
 
 
 
-### timestamp+
+### time-entity+
 
 ```lisp
-(timestamp amount unit &rest more)
+(time-entity amount unit &rest more)
 ```
 
 
-### timestamp-
+### time-entity-
 
 ```lisp
-(timestamp amount unit &rest more)
+(time-entity amount unit &rest more)
 ```
 
-Return a new timestamp from TIMESTAMP reduced in AMOUNT UNITs.
+Return a new time-entity from TIME-ENTITY reduced in AMOUNT UNITs.
 Example:
-(timestamp- (now) 2 :day)
+(time-entity- (now) 2 :day)
 
 
 
 
-### timestamp->local-time
+### time-entity->local-time
 
 ```lisp
-(timestamp)
+(time-entity)
 ```
 
-Generic timestamp to local-time conversion.
+Generic time-entity to local-time conversion.
 
 
 
 
-### timestamp-coerce
+### time-entity-coerce
 
 ```lisp
-(timestamp class &rest args)
+(time-entity class &rest args)
 ```
 
 Convert between different classes of time types.
@@ -284,26 +284,26 @@ Convert between different classes of time types.
 
 
 
-### timestamp-difference
+### time-entity-difference
 
 ```lisp
 (t1 t2 &optional unit)
 ```
 
-Difference between timestamps, in UNITs.
+Difference between time-entities, in UNITs.
 
 
 
 
-### timestamp-equalp
+### time-entity-equalp
 
 ```lisp
 (t1 t2)
 ```
 
-Compare timestamps for equality.
-This is a structural equality comparison. So, two timestamps that represent
-the same point in time, but differ in one of its elements (for instance, its timezone), are considered different. Use TIMESTAMP= for equality for timestamps that
+Compare time-entities for equality.
+This is a structural equality comparison. So, two time-entities that represent
+the same point in time, but differ in one of its elements (for instance, its timezone), are considered different. Use TIME-ENTITY= for equality for time-entities that
 represent the same point in time.
 
 
@@ -326,8 +326,8 @@ A date like 2024-01-01
 ### datetime
 A datetime like 2024-01-01T00:00:00
 
-### timestamp
-Abstract timestamp class
+### time-entity
+Abstract time-entity class
 
 ### walltime
 Represents a 'wall' time. Like 01:01:22
