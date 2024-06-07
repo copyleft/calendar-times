@@ -141,3 +141,16 @@
   (let ((zdatetime (now)))
     (is (caltime-equalp (apply #'make-zoned-datetime (multiple-value-list (decode-caltime zdatetime)))
                         zdatetime))))
+
+(deftest compose-tests ()
+  (let ((date (make-date 1 1 2024))
+        (time (make-time 0 1 1)))
+    (is (caltime-equalp
+         (caltimes-compose date time)
+         (make-datetime 0 1 1 1 1 2024)))
+    (is (caltime-equalp
+         (caltimes-compose time date)
+         (make-datetime 0 1 1 1 1 2024))))
+  (let ((datetime (make-datetime 0 0 0 1 1 2024)))
+    (is (typep (caltimes-compose datetime local-time:+utc-zone+)
+               'zoned-datetime))))
