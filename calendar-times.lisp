@@ -1,8 +1,9 @@
 (defpackage :calendar-times
   (:use :cl)
+  (:nicknames :caltimes)
   (:export
    ;; classes
-   #:time-entity
+   #:caltime
    #:walltime
    #:date
    #:datetime
@@ -26,28 +27,28 @@
    #:timezone-of
    #:datetime-time
    #:datetime-date
-   #:decode-time-entity
+   #:decode-caltime
 
    ;; comparisons
-   #:time-entity-equalp
-   #:time-entity=
-   #:time-entity<
-   #:time-entity<=
-   #:time-entity>
-   #:time-entity>=
+   #:caltime-equalp
+   #:caltime=
+   #:caltime<
+   #:caltime<=
+   #:caltime>
+   #:caltime>=
 
    ;; calculations
-   #:time-entity+
-   #:time-entity-
-   #:time-entity-difference
+   #:caltime+
+   #:caltime-
+   #:caltime-difference
    #:day-of-week
 
    ;; conversions
-   #:time-entity-adjust
-   #:time-entities-compose
-   #:time-entity-coerce
-   #:time-entity->local-time
-   #:time-entity->universal-time
+   #:caltime-adjust
+   #:caltimes-compose
+   #:caltime-coerce
+   #:caltime->local-time
+   #:caltime->universal-time
 
    ;; constants
    #:+months-per-year+
@@ -60,7 +61,7 @@
    #:+seconds-per-minute+
 
    ;; operations
-   #:clone-time-entity
+   #:clone-caltime
 
    ;; utilities
    #:time-now
@@ -68,13 +69,13 @@
    #:today
 
    ;; formatting
-   #:format-time-entity
+   #:format-caltime
 
    ;; parsing
    #:parse-timestring)
   (:documentation "CALENDAR-TIMES is a calendar time library implemented on top of LOCAL-TIME library.
 
-It features zoned time-entities and calculations."))
+It features zoned calendar times and calculations."))
 
 (in-package :calendar-times)
 
@@ -90,13 +91,13 @@ It features zoned time-entities and calculations."))
 (defconstant +seconds-per-minute+ 60)
 (defvar +day-names+ #(:sunday :monday :tuesday :wednesday :thursday :friday :saturday))
 
-;; ** Time-Entity classes
+;; ** Caltime classes
 
-(defclass time-entity ()
+(defclass caltime ()
   ()
-  (:documentation "Abstract time-entity class"))
+  (:documentation "Abstract caltime class"))
 
-(defclass walltime (time-entity)
+(defclass walltime (caltime)
   ((hour :reader hour-of
          :type integer)
    (minutes :reader minutes-of
@@ -105,7 +106,7 @@ It features zoned time-entities and calculations."))
             :type integer))
   (:documentation "Represents a 'wall' time. Like 01:01:22"))
 
-(defclass date (time-entity)
+(defclass date (caltime)
   ((year :reader year-of)
    (month :reader month-of)
    (day :reader day-of))
@@ -115,18 +116,18 @@ It features zoned time-entities and calculations."))
   ()
   (:documentation "A datetime like 2024-01-01T00:00:00"))
 
-(defclass zoned-time-entity ()
+(defclass zoned-caltime ()
   ((timezone :reader timezone-of
              :initform local-time:+utc-zone+
              :type (or local-time::timezone integer)
              :documentation "Timezone can be a LOCAL-TIME::TIMEZONE object, or an offset."))
-  (:documentation "A time-entity with timezone. Abstract class."))
+  (:documentation "A caltime with timezone. Abstract class."))
 
-(defclass zoned-datetime (datetime zoned-time-entity)
+(defclass zoned-datetime (datetime zoned-caltime)
   ()
   (:documentation "A datetime with a timezone."))
 
-(defclass zoned-date (date zoned-time-entity)
+(defclass zoned-date (date zoned-caltime)
   ()
   (:documentation "A date with a timezone."))
 
@@ -246,21 +247,21 @@ It features zoned time-entities and calculations."))
    (minutes-of datetime)
    (hour-of datetime)))
 
-(defgeneric decode-time-entity (time-entity)
-  (:documentation "Decode a TIME-ENTITY parts and return them with VALUES.
+(defgeneric decode-caltime (caltime)
+  (:documentation "Decode a CALTIME parts and return them with VALUES.
 The order of the list of values is the same as passed to the constructor functions."))
 
-(defmethod decode-time-entity ((time walltime))
+(defmethod decode-caltime ((time walltime))
   (values (seconds-of time)
           (minutes-of time)
           (hour-of time)))
 
-(defmethod decode-time-entity ((date date))
+(defmethod decode-caltime ((date date))
   (values (day-of date)
           (month-of date)
           (year-of date)))
 
-(defmethod decode-time-entity ((datetime datetime))
+(defmethod decode-caltime ((datetime datetime))
   (values (seconds-of datetime)
           (minutes-of datetime)
           (hour-of datetime)
@@ -268,7 +269,7 @@ The order of the list of values is the same as passed to the constructor functio
           (month-of datetime)
           (year-of datetime)))
 
-(defmethod decode-time-entity ((datetime zoned-datetime))
+(defmethod decode-caltime ((datetime zoned-datetime))
   (values (seconds-of datetime)
           (minutes-of datetime)
           (hour-of datetime)
@@ -279,146 +280,146 @@ The order of the list of values is the same as passed to the constructor functio
 
 ;; ** Conversions
 
-(defun time-entity->universal-time (time-entity)
-  "Convert TIME-ENTITY to UNIVERSAL-TIME."
+(defun caltime->universal-time (caltime)
+  "Convert CALTIME to UNIVERSAL-TIME."
   (local-time:timestamp-to-universal
-   (time-entity->local-time time-entity)))
+   (caltime->local-time caltime)))
 
-(defun time->local-time (time-entity)
-  "Convert WALLTIME to TIME-ENTITY."
+(defun time->local-time (caltime)
+  "Convert WALLTIME to CALTIME."
   (local-time:encode-timestamp
    0
-   (seconds-of time-entity)
-   (minutes-of time-entity)
-   (hour-of time-entity)
+   (seconds-of caltime)
+   (minutes-of caltime)
+   (hour-of caltime)
    1 1 1970
    :timezone local-time:+utc-zone+))
 
-(defun date->local-time (time-entity)
+(defun date->local-time (caltime)
   (local-time:encode-timestamp
    0 0 0 0
-   (day-of time-entity)
-   (month-of time-entity)
-   (year-of time-entity)
+   (day-of caltime)
+   (month-of caltime)
+   (year-of caltime)
    :timezone local-time:+utc-zone+))
 
-(defun datetime->local-time (time-entity &optional (timezone local-time:*default-timezone*) offset)
-  (check-type time-entity datetime)
+(defun datetime->local-time (caltime &optional (timezone local-time:*default-timezone*) offset)
+  (check-type caltime datetime)
   (local-time:encode-timestamp
    0
-   (seconds-of time-entity)
-   (minutes-of time-entity)
-   (hour-of time-entity)
-   (day-of time-entity)
-   (month-of time-entity)
-   (year-of time-entity)
+   (seconds-of caltime)
+   (minutes-of caltime)
+   (hour-of caltime)
+   (day-of caltime)
+   (month-of caltime)
+   (year-of caltime)
    :timezone timezone
    :offset offset))
 
-(defun zoned-datetime->local-time (time-entity)
-  (check-type time-entity zoned-datetime)
-  (etypecase (timezone-of time-entity)
+(defun zoned-datetime->local-time (caltime)
+  (check-type caltime zoned-datetime)
+  (etypecase (timezone-of caltime)
     (integer ;; offset
      (local-time:encode-timestamp
       0
-      (seconds-of time-entity)
-      (minutes-of time-entity)
-      (hour-of time-entity)
-      (day-of time-entity)
-      (month-of time-entity)
-      (year-of time-entity)
-      :offset (timezone-of time-entity)))
+      (seconds-of caltime)
+      (minutes-of caltime)
+      (hour-of caltime)
+      (day-of caltime)
+      (month-of caltime)
+      (year-of caltime)
+      :offset (timezone-of caltime)))
     (local-time::timezone
      (local-time:encode-timestamp
       0
-      (seconds-of time-entity)
-      (minutes-of time-entity)
-      (hour-of time-entity)
-      (day-of time-entity)
-      (month-of time-entity)
-      (year-of time-entity)
-      :timezone (timezone-of time-entity)))))
+      (seconds-of caltime)
+      (minutes-of caltime)
+      (hour-of caltime)
+      (day-of caltime)
+      (month-of caltime)
+      (year-of caltime)
+      :timezone (timezone-of caltime)))))
 
-(defun zoned-date->local-time (time-entity)
-  (check-type time-entity zoned-date)
-  (etypecase (timezone-of time-entity)
+(defun zoned-date->local-time (caltime)
+  (check-type caltime zoned-date)
+  (etypecase (timezone-of caltime)
     (local-time::timezone
      (local-time:encode-timestamp
       0 0 0 0
-      (day-of time-entity)
-      (month-of time-entity)
-      (year-of time-entity)
-      :timezone (timezone-of time-entity)))
+      (day-of caltime)
+      (month-of caltime)
+      (year-of caltime)
+      :timezone (timezone-of caltime)))
     (integer ;; offset
      (local-time:encode-timestamp
       0 0 0 0
-      (day-of time-entity)
-      (month-of time-entity)
-      (year-of time-entity)
-      :offset (timezone-of time-entity)))))
+      (day-of caltime)
+      (month-of caltime)
+      (year-of caltime)
+      :offset (timezone-of caltime)))))
 
-(defgeneric time-entity-coerce (time-entity class &rest args)
-  (:method (time-entity class &rest args)
+(defgeneric caltime-coerce (caltime class &rest args)
+  (:method (caltime class &rest args)
     (declare (ignore args))
-    (error "Can't coerce ~s to ~s" time-entity class))
+    (error "Can't coerce ~s to ~s" caltime class))
   (:documentation "Convert between different classes of time types."))
 
-(defmethod time-entity-coerce ((time-entity datetime) (class (eql 'date)) &rest args)
+(defmethod caltime-coerce ((caltime datetime) (class (eql 'date)) &rest args)
   (declare (ignore args))
-  (make-date (day-of time-entity)
-             (month-of time-entity)
-             (year-of time-entity)))
+  (make-date (day-of caltime)
+             (month-of caltime)
+             (year-of caltime)))
 
-(defmethod time-entity-coerce ((time-entity datetime) (class (eql 'zoned-datetime)) &rest args)
-  (make-zoned-datetime (seconds-of time-entity)
-                       (minutes-of time-entity)
-                       (hour-of time-entity)
-                       (day-of time-entity)
-                       (month-of time-entity)
-                       (year-of time-entity)
+(defmethod caltime-coerce ((caltime datetime) (class (eql 'zoned-datetime)) &rest args)
+  (make-zoned-datetime (seconds-of caltime)
+                       (minutes-of caltime)
+                       (hour-of caltime)
+                       (day-of caltime)
+                       (month-of caltime)
+                       (year-of caltime)
                        (or (car args) local-time:+utc-zone+)))
 
-(defmethod time-entity-coerce ((time-entity datetime) (class (eql 'time)) &rest args)
+(defmethod caltime-coerce ((caltime datetime) (class (eql 'time)) &rest args)
   (declare (ignore args))
-  (make-time (seconds-of time-entity)
-             (minutes-of time-entity)
-             (hour-of time-entity)))
+  (make-time (seconds-of caltime)
+             (minutes-of caltime)
+             (hour-of caltime)))
 
-(defmethod time-entity-coerce ((time-entity zoned-datetime) (class (eql 'datetime)) &rest args)
+(defmethod caltime-coerce ((caltime zoned-datetime) (class (eql 'datetime)) &rest args)
   (declare (ignore args))
-  (make-datetime (seconds-of time-entity)
-                 (minutes-of time-entity)
-                 (hour-of time-entity)
-                 (day-of time-entity)
-                 (month-of time-entity)
-                 (year-of time-entity)))
+  (make-datetime (seconds-of caltime)
+                 (minutes-of caltime)
+                 (hour-of caltime)
+                 (day-of caltime)
+                 (month-of caltime)
+                 (year-of caltime)))
 
-(defgeneric time-entity->local-time (time-entity)
-  (:documentation "Generic time-entity to local-time conversion."))
+(defgeneric caltime->local-time (caltime)
+  (:documentation "Generic caltime to local-time conversion."))
 
-(defmethod time-entity->local-time ((time-entity walltime))
-  (time->local-time time-entity))
+(defmethod caltime->local-time ((caltime walltime))
+  (time->local-time caltime))
 
-(defmethod time-entity->local-time ((time-entity date))
-  (date->local-time time-entity))
+(defmethod caltime->local-time ((caltime date))
+  (date->local-time caltime))
 
-(defmethod time-entity->local-time ((time-entity zoned-date))
-  (zoned-date->local-time time-entity))
+(defmethod caltime->local-time ((caltime zoned-date))
+  (zoned-date->local-time caltime))
 
-(defmethod time-entity->local-time ((time-entity zoned-datetime))
-  (zoned-datetime->local-time time-entity))
+(defmethod caltime->local-time ((caltime zoned-datetime))
+  (zoned-datetime->local-time caltime))
 
-(defun local-time->date (time-entity)
-  (make-date (local-time:timestamp-day time-entity)
-             (local-time:timestamp-month time-entity)
-             (local-time:timestamp-year time-entity)))
+(defun local-time->date (caltime)
+  (make-date (local-time:timestamp-day caltime)
+             (local-time:timestamp-month caltime)
+             (local-time:timestamp-year caltime)))
 
-(defun local-time->walltime (time-entity)
-  (make-time (local-time:timestamp-second time-entity)
-             (local-time:timestamp-minute time-entity)
-             (local-time:timestamp-hour time-entity)))
+(defun local-time->walltime (caltime)
+  (make-time (local-time:timestamp-second caltime)
+             (local-time:timestamp-minute caltime)
+             (local-time:timestamp-hour caltime)))
 
-(defgeneric local-time->time-entity (local-time time-entity-class))
+(defgeneric local-time->caltime (local-time caltime-class))
 
 ;; ** Formatting
 
@@ -437,179 +438,179 @@ The order of the list of values is the same as passed to the constructor functio
 (defparameter +zoned-datetime-format+
   (append +date-format+ (list #\T) +time-format+ (list :gmt-offset-hhmm)))
 
-(defgeneric format-time-entity (destination time-entity &optional format &rest args)
-  (:documentation "Format TIME-ENTITY.
+(defgeneric format-caltime (destination caltime &optional format &rest args)
+  (:documentation "Format CALTIME.
 Destination can be T, then timestring is written to *STANDARD-OUTPUT*;
 can be NIL, then a string is returned;
 or can be a stream."))
 
-(defmethod format-time-entity (destination (time-entity zoned-datetime) &optional (format +zoned-datetime-format+) &rest args)
+(defmethod format-caltime (destination (caltime zoned-datetime) &optional (format +zoned-datetime-format+) &rest args)
   (declare (ignore args))
   (uiop:with-output (out destination)
     (local-time:format-timestring
-     out (zoned-datetime->local-time time-entity)
+     out (zoned-datetime->local-time caltime)
      :format format
-     :timezone (if (integerp (timezone-of time-entity))
-                   (make-gmt-offset-timezone (timezone-of time-entity))
-                   (timezone-of time-entity)))
-    (unless (integerp (timezone-of time-entity))
+     :timezone (if (integerp (timezone-of caltime))
+                   (make-gmt-offset-timezone (timezone-of caltime))
+                   (timezone-of caltime)))
+    (unless (integerp (timezone-of caltime))
       (write-char #\space out)
-      (write-string (local-time::timezone-name (timezone-of time-entity))
+      (write-string (local-time::timezone-name (timezone-of caltime))
                     out))))
 
-(defmethod format-time-entity (destination (time-entity date) &optional (format +date-format+) &rest args)
+(defmethod format-caltime (destination (caltime date) &optional (format +date-format+) &rest args)
   (declare (ignore args))
   (local-time:format-timestring
    destination
-   (date->local-time time-entity)
+   (date->local-time caltime)
    :format format
    :timezone local-time:+utc-zone+))
 
-(defmethod format-time-entity (destination (time-entity zoned-date) &optional (format +zoned-date-format+) &rest args)
+(defmethod format-caltime (destination (caltime zoned-date) &optional (format +zoned-date-format+) &rest args)
   (declare (ignore args))
   (local-time:format-timestring
    destination
-   (date->local-time time-entity)
-   ;;:timezone (timezone-of time-entity)
+   (date->local-time caltime)
+   ;;:timezone (timezone-of caltime)
    :format format))
 
 ;; (defparameter +zoned-date-format+ "%F %z")
 
-;; (defmethod format-time-entity (destination (time-entity zoned-date) &rest args)
+;; (defmethod format-caltime (destination (caltime zoned-date) &rest args)
 ;;   (cl-strftime:format-time
 ;;    destination
 ;;    +zoned-date-format+
-;;    (time-entity->universal-time time-entity)
-;;    (etypecase (timezone-of time-entity)
+;;    (caltime->universal-time caltime)
+;;    (etypecase (timezone-of caltime)
 ;;      (local-time::timezone
-;;       (timezone-of time-entity))
-;;      (integer (local-time::%make-simple-timezone "offset" "OFFSET" (timezone-of time-entity)))
+;;       (timezone-of caltime))
+;;      (integer (local-time::%make-simple-timezone "offset" "OFFSET" (timezone-of caltime)))
 ;;      )))
 
-(defmethod format-time-entity (destination (time-entity walltime) &optional (format +time-format+) &rest args)
+(defmethod format-caltime (destination (caltime walltime) &optional (format +time-format+) &rest args)
   (declare (ignore args))
   (local-time:format-timestring
    destination
-   (time->local-time time-entity)
+   (time->local-time caltime)
    :format format
    :timezone local-time:+utc-zone+))
 
-(defmethod format-time-entity (destination (time-entity datetime) &optional (format +datetime-format+) &rest args)
+(defmethod format-caltime (destination (caltime datetime) &optional (format +datetime-format+) &rest args)
   (declare (ignore args))
   (local-time:format-timestring
    destination
-   (datetime->local-time time-entity)
+   (datetime->local-time caltime)
    :format format))
 
-(defmethod print-object ((time-entity time-entity) stream)
-  (print-unreadable-object (time-entity stream :type t)
-    (format-time-entity stream time-entity)))
+(defmethod print-object ((caltime caltime) stream)
+  (print-unreadable-object (caltime stream :type t)
+    (format-caltime stream caltime)))
 
 ;; ** Calculations
 
-(defgeneric time-entity+ (time-entity amount unit &rest more))
+(defgeneric caltime+ (caltime amount unit &rest more))
 
-(defmethod time-entity+ ((time-entity time-entity) amount unit &rest more)
-  (let* ((lt (local-time:timestamp+ (time-entity->local-time time-entity) amount unit))
-         (new-time-entity (local-time->time-entity lt (class-of time-entity))))
+(defmethod caltime+ ((caltime caltime) amount unit &rest more)
+  (let* ((lt (local-time:timestamp+ (caltime->local-time caltime) amount unit))
+         (new-caltime (local-time->caltime lt (class-of caltime))))
     (if more
-        (apply #'time-entity+ new-time-entity (car more) (cadr more) (cddr more))
-        new-time-entity)))
+        (apply #'caltime+ new-caltime (car more) (cadr more) (cddr more))
+        new-caltime)))
 
-(defmethod time-entity+ ((time-entity date) amount unit &rest more)
-  (let* ((lt (local-time:timestamp+ (time-entity->local-time time-entity) amount unit))
-         (new-time-entity
+(defmethod caltime+ ((caltime date) amount unit &rest more)
+  (let* ((lt (local-time:timestamp+ (caltime->local-time caltime) amount unit))
+         (new-caltime
            (make-date (local-time:timestamp-day lt)
                       (local-time:timestamp-month lt)
                       (local-time:timestamp-year lt))))
     (if more
-        (apply #'time-entity+ new-time-entity (car more) (cadr more) (cddr more))
-        new-time-entity)))
+        (apply #'caltime+ new-caltime (car more) (cadr more) (cddr more))
+        new-caltime)))
 
-(defmethod time-entity+ ((time-entity zoned-datetime) amount unit &rest more)
-  (let* ((lt (local-time:timestamp+ (time-entity->local-time time-entity) amount unit
-                                    (timezone-of time-entity)))
-         (new-time-entity
+(defmethod caltime+ ((caltime zoned-datetime) amount unit &rest more)
+  (let* ((lt (local-time:timestamp+ (caltime->local-time caltime) amount unit
+                                    (timezone-of caltime)))
+         (new-caltime
            (make-zoned-datetime
-            (local-time:timestamp-second lt :timezone (timezone-of time-entity))
-            (local-time:timestamp-minute lt :timezone (timezone-of time-entity))
-            (local-time:timestamp-hour lt :timezone (timezone-of time-entity))
-            (local-time:timestamp-day lt :timezone (timezone-of time-entity))
-            (local-time:timestamp-month lt :timezone (timezone-of time-entity))
-            (local-time:timestamp-year lt :timezone (timezone-of time-entity))
-            (timezone-of time-entity))))
+            (local-time:timestamp-second lt :timezone (timezone-of caltime))
+            (local-time:timestamp-minute lt :timezone (timezone-of caltime))
+            (local-time:timestamp-hour lt :timezone (timezone-of caltime))
+            (local-time:timestamp-day lt :timezone (timezone-of caltime))
+            (local-time:timestamp-month lt :timezone (timezone-of caltime))
+            (local-time:timestamp-year lt :timezone (timezone-of caltime))
+            (timezone-of caltime))))
     (if more
-        (apply #'time-entity+ new-time-entity (car more) (cadr more) (cddr more))
-        new-time-entity)))
+        (apply #'caltime+ new-caltime (car more) (cadr more) (cddr more))
+        new-caltime)))
 
 #+test
 (let ((day (make-zoned-datetime 0 0 0 1 1 2024)))
-  (time-entity+ day 1 :day 2 :year))
+  (caltime+ day 1 :day 2 :year))
 
 ;; Use apply for a period language
 #+test
 (let ((date (make-zoned-datetime 0 0 0 1 1 2024))
       (period '(1 :year 2 :month)))
-  (apply #'time-entity+ date period))
+  (apply #'caltime+ date period))
 
-(defgeneric time-entity- (time-entity amount unit &rest more)
-  (:documentation "Return a new time-entity from TIME-ENTITY reduced in AMOUNT UNITs.
+(defgeneric caltime- (caltime amount unit &rest more)
+  (:documentation "Return a new caltime from CALTIME reduced in AMOUNT UNITs.
 Example:
-(time-entity- (now) 2 :day)"))
+(caltime- (now) 2 :day)"))
 
-(defmethod time-entity- ((time-entity time-entity) amount unit &rest more)
-  (let* ((lt (local-time:timestamp- (time-entity->local-time time-entity) amount unit))
-         (new-time-entity (local-time->time-entity lt (class-of time-entity))))
+(defmethod caltime- ((caltime caltime) amount unit &rest more)
+  (let* ((lt (local-time:timestamp- (caltime->local-time caltime) amount unit))
+         (new-caltime (local-time->caltime lt (class-of caltime))))
     (if more
-        (apply #'time-entity- new-time-entity (car more) (cadr more) (cddr more))
-        new-time-entity)))
+        (apply #'caltime- new-caltime (car more) (cadr more) (cddr more))
+        new-caltime)))
 
-(defmethod time-entity- ((time-entity date) amount unit &rest more)
-  (let* ((lt (local-time:timestamp- (time-entity->local-time time-entity) amount unit))
-         (new-time-entity
+(defmethod caltime- ((caltime date) amount unit &rest more)
+  (let* ((lt (local-time:timestamp- (caltime->local-time caltime) amount unit))
+         (new-caltime
            (make-date (local-time:timestamp-day lt)
                       (local-time:timestamp-month lt)
                       (local-time:timestamp-year lt))))
     (if more
-        (apply #'time-entity- new-time-entity (car more) (cadr more) (cddr more))
-        new-time-entity)))
+        (apply #'caltime- new-caltime (car more) (cadr more) (cddr more))
+        new-caltime)))
 
-(defmethod time-entity- ((time-entity zoned-datetime) amount unit &rest more)
-  (let* ((lt (local-time:timestamp- (time-entity->local-time time-entity) amount unit
-                                    (timezone-of time-entity)))
-         (new-time-entity
+(defmethod caltime- ((caltime zoned-datetime) amount unit &rest more)
+  (let* ((lt (local-time:timestamp- (caltime->local-time caltime) amount unit
+                                    (timezone-of caltime)))
+         (new-caltime
            (make-zoned-datetime
-            (local-time:timestamp-second lt :timezone (timezone-of time-entity))
-            (local-time:timestamp-minute lt :timezone (timezone-of time-entity))
-            (local-time:timestamp-hour lt :timezone (timezone-of time-entity))
-            (local-time:timestamp-day lt :timezone (timezone-of time-entity))
-            (local-time:timestamp-month lt :timezone (timezone-of time-entity))
-            (local-time:timestamp-year lt :timezone (timezone-of time-entity))
-            (timezone-of time-entity))))
+            (local-time:timestamp-second lt :timezone (timezone-of caltime))
+            (local-time:timestamp-minute lt :timezone (timezone-of caltime))
+            (local-time:timestamp-hour lt :timezone (timezone-of caltime))
+            (local-time:timestamp-day lt :timezone (timezone-of caltime))
+            (local-time:timestamp-month lt :timezone (timezone-of caltime))
+            (local-time:timestamp-year lt :timezone (timezone-of caltime))
+            (timezone-of caltime))))
     (if more
-        (apply #'time-entity- new-time-entity (car more) (cadr more) (cddr more))
-        new-time-entity)))
+        (apply #'caltime- new-caltime (car more) (cadr more) (cddr more))
+        new-caltime)))
 
-(declaim (ftype (function (time-entity &optional (member :number :name))
+(declaim (ftype (function (caltime &optional (member :number :name))
                           (or integer keyword))
                 day-of-week))
-(defun day-of-week (time-entity &optional (format :number))
-  "Return day of week of TIME-ENTITY.
+(defun day-of-week (caltime &optional (format :number))
+  "Return day of week of CALTIME.
 FORMAT can be either :NUMBER (default) or :NAME."
-  (let ((day-of-week (local-time:timestamp-day-of-week (time-entity->local-time time-entity))))
+  (let ((day-of-week (local-time:timestamp-day-of-week (caltime->local-time caltime))))
     (case format
       (:number day-of-week)
       (:name (aref +day-names+ day-of-week)))))
 
 #+test
 (let ((day (make-zoned-datetime 0 0 0 1 1 2024)))
-  (time-entity- day 1 :day 2 :year))
+  (caltime- day 1 :day 2 :year))
 
 ;; Use apply for a period language
 #+test
 (let ((date (make-zoned-datetime 0 0 0 1 1 2024))
       (period '(1 :year 2 :month)))
-  (apply #'time-entity- date period))
+  (apply #'caltime- date period))
 
 ;; Naive units conversions. How to improve?
 (defgeneric convert-units (value from-unit to-unit))
@@ -638,13 +639,13 @@ FORMAT can be either :NUMBER (default) or :NAME."
 
 ;; (convert-units 2 :hours :minutes)
 
-(defgeneric time-entity-difference (t1 t2 &optional unit)
-  (:documentation "Difference between time-entities, in UNITs."))
+(defgeneric caltime-difference (t1 t2 &optional unit)
+  (:documentation "Difference between caltimes, in UNITs."))
 
-(defmethod time-entity-difference (t1 t2 &optional unit)
+(defmethod caltime-difference (t1 t2 &optional unit)
   (let ((seconds (local-time:timestamp-difference
-                  (time-entity->local-time t1)
-                  (time-entity->local-time t2))))
+                  (caltime->local-time t1)
+                  (caltime->local-time t2))))
     (if unit
         (convert-units seconds :seconds unit)
         seconds)))
@@ -655,7 +656,7 @@ FORMAT can be either :NUMBER (default) or :NAME."
   "The WALLTIME now."
   (let ((now (local-time:now)))
     (if timezone
-        (let ((time-entity-values
+        (let ((caltime-values
                 (coerce
                  (multiple-value-list
                   (local-time:decode-timestamp
@@ -665,9 +666,9 @@ FORMAT can be either :NUMBER (default) or :NAME."
                                  (ensure-timezone timezone))
                    :offset (when (integerp timezone) timezone)))
                  'vector)))
-          (make-time (aref time-entity-values 1)
-                     (aref time-entity-values 2)
-                     (aref time-entity-values 3)))
+          (make-time (aref caltime-values 1)
+                     (aref caltime-values 2)
+                     (aref caltime-values 3)))
         ;; else
         (make-time (local-time:timestamp-second now)
                    (local-time:timestamp-minute now)
@@ -677,7 +678,7 @@ FORMAT can be either :NUMBER (default) or :NAME."
   "The ZONED-DATETIME now."
   (let ((now (local-time:now)))
     (if timezone
-        (let ((time-entity-values
+        (let ((caltime-values
                 (coerce
                  (multiple-value-list
                   (local-time:decode-timestamp
@@ -687,12 +688,12 @@ FORMAT can be either :NUMBER (default) or :NAME."
                                  (ensure-timezone timezone))
                    :offset (when (integerp timezone) timezone)))
                  'vector)))
-          (make-zoned-datetime (aref time-entity-values 1)
-                               (aref time-entity-values 2)
-                               (aref time-entity-values 3)
-                               (aref time-entity-values 4)
-                               (aref time-entity-values 5)
-                               (aref time-entity-values 6)
+          (make-zoned-datetime (aref caltime-values 1)
+                               (aref caltime-values 2)
+                               (aref caltime-values 3)
+                               (aref caltime-values 4)
+                               (aref caltime-values 5)
+                               (aref caltime-values 6)
                                (if (integerp timezone)
                                    timezone
                                    (ensure-timezone timezone))))
@@ -710,7 +711,7 @@ FORMAT can be either :NUMBER (default) or :NAME."
   "Returns DATE today."
   (let ((now (local-time:now)))
     (if timezone
-        (let ((time-entity-values
+        (let ((caltime-values
                 (coerce
                  (multiple-value-list
                   (local-time:decode-timestamp
@@ -720,9 +721,9 @@ FORMAT can be either :NUMBER (default) or :NAME."
                                  (ensure-timezone timezone))
                    :offset (when (integerp timezone) timezone)))
                  'vector)))
-          (make-date (aref time-entity-values 4)
-                     (aref time-entity-values 5)
-                     (aref time-entity-values 6)))
+          (make-date (aref caltime-values 4)
+                     (aref caltime-values 5)
+                     (aref caltime-values 6)))
         ;; else
         (make-date (local-time:timestamp-day now)
                    (local-time:timestamp-month now)
@@ -747,44 +748,44 @@ FORMAT can be either :NUMBER (default) or :NAME."
                 (slot-value object slot-name))))
       (apply #'reinitialize-instance copy initargs))))
 
-(defgeneric clone-time-entity (time-entity &rest args))
-(defmethod clone-time-entity ((time-entity time-entity) &rest args)
-  (apply #'copy-instance time-entity args))
+(defgeneric clone-caltime (caltime &rest args))
+(defmethod clone-caltime ((caltime caltime) &rest args)
+  (apply #'copy-instance caltime args))
 
 #+test
 (let* ((d1 (make-date 2024 10 10))
-       (d2 (clone-time-entity d1 :year 2023)))
+       (d2 (clone-caltime d1 :year 2023)))
   (list d1 d2))
 
 #+test
 (let* ((d1 (make-instance 'zoned-datetime :year 2023 :timezone "America/Argentina/Buenos_Aires"))
-       (d2 (clone-time-entity d1 :timezone "Europe/Stockholm")))
+       (d2 (clone-caltime d1 :timezone "Europe/Stockholm")))
   (list d1 d2))
 
-(defun time-entity-adjust (time-entity &rest changes)
-  (let ((adjusted-time-entity (clone-time-entity time-entity)))
+(defun caltime-adjust (caltime &rest changes)
+  (let ((adjusted-caltime (clone-caltime caltime)))
     (flet ((apply-change (change args)
              (ecase change
                (setf
-                (setf (slot-value adjusted-time-entity (car args))
+                (setf (slot-value adjusted-caltime (car args))
                       (cadr args))))))
       (dolist (change changes)
         (destructuring-bind (change-name &rest args) change
           (apply-change change-name args)))
-      adjusted-time-entity)))
+      adjusted-caltime)))
 
 #+test
 (let ((now (now)))
-  (time-entity-adjust now
+  (caltime-adjust now
                     '(setf day 22)
                     '(setf hour 00)
                     ))
 
-(defgeneric %time-entities-compose (t1 t2)
+(defgeneric %caltimes-compose (t1 t2)
   (:method (t1 t2)
     (error "Can't compose ~s with ~s" t1 t2)))
 
-(defmethod %time-entities-compose ((t1 date) (t2 walltime))
+(defmethod %caltimes-compose ((t1 date) (t2 walltime))
   (make-datetime (seconds-of t2)
                  (minutes-of t2)
                  (hour-of t2)
@@ -792,85 +793,85 @@ FORMAT can be either :NUMBER (default) or :NAME."
                  (month-of t1)
                  (year-of t1)))
 
-(defmethod %time-entities-compose ((t1 walltime) (t2 date))
-  (%time-entities-compose t2 t1))
+(defmethod %caltimes-compose ((t1 walltime) (t2 date))
+  (%caltimes-compose t2 t1))
 
-(defmethod %time-entities-compose ((t1 datetime) (z local-time::timezone))
-  (time-entity-coerce t1 'zoned-datetime z))
+(defmethod %caltimes-compose ((t1 datetime) (z local-time::timezone))
+  (caltime-coerce t1 'zoned-datetime z))
 
-(defmethod %time-entities-compose ((t1 datetime) (t2 date))
-  (%time-entities-compose t2 (datetime-time t1)))
+(defmethod %caltimes-compose ((t1 datetime) (t2 date))
+  (%caltimes-compose t2 (datetime-time t1)))
 
-(defmethod %time-entities-compose ((t1 datetime) (t2 walltime))
-  (%time-entities-compose (datetime-date t1) t2))
+(defmethod %caltimes-compose ((t1 datetime) (t2 walltime))
+  (%caltimes-compose (datetime-date t1) t2))
 
-(defun time-entities-compose (t1 t2 &rest more)
-  "Compose time-entities.
+(defun caltimes-compose (t1 t2 &rest more)
+  "Compose caltimes.
 
 For example, a date + a time = datetime; a date-time + timezone = zoned-datetime.."
-  (%time-entities-compose t1 t2))
+  (%caltimes-compose t1 t2))
 
-;; (time-entities-compose (today) (time-now))
-;; (time-entities-compose (time-now) (today))
-;; (time-entities-compose (time-entity-coerce (now) 'datetime) local-time:+utc-zone+)
+;; (caltimes-compose (today) (time-now))
+;; (caltimes-compose (time-now) (today))
+;; (caltimes-compose (caltime-coerce (now) 'datetime) local-time:+utc-zone+)
 
-(defgeneric time-entity-compare (t1 t2))
+(defgeneric caltime-compare (t1 t2))
 
-(defmethod time-entity-compare ((t1 time-entity) (t2 time-entity))
-  (local-time::%time-entity-compare
-   (time-entity->local-time t1)
-   (time-entity->local-time t2)))
+(defmethod caltime-compare ((t1 caltime) (t2 caltime))
+  (local-time::%timestamp-compare
+   (caltime->local-time t1)
+   (caltime->local-time t2)))
 
-(defgeneric time-entity-equalp (t1 t2)
-  (:documentation "Compare time-entities for equality.
-This is a structural equality comparison. So, two time-entities that represent
-the same point in time, but differ in one of its elements (for instance, its timezone), are considered different. Use TIME-ENTITY= for equality for time-entities that
+(defgeneric caltime-equalp (t1 t2)
+  (:documentation "Compare caltimes for equality.
+This is a structural equality comparison. So, two caltimes that represent
+the same point in time, but differ in one of its elements (for instance, its timezone), are considered different. Use CALTIME= for equality for caltimes that
 represent the same point in time."))
 
-(defmethod time-entity-equalp ((t1 time-entity) (t2 time-entity))
+(defmethod caltime-equalp ((t1 caltime) (t2 caltime))
   (equalp t1 t2))
 
-(defmethod time-entity-equalp ((t1 walltime) (t2 walltime))
+(defmethod caltime-equalp ((t1 walltime) (t2 walltime))
   (and (= (seconds-of t1) (seconds-of t2))
        (= (minutes-of t1) (minutes-of t2))
        (= (hour-of t1) (hour-of t2))))
 
-(defmethod time-entity-equalp ((t1 date) (t2 date))
+(defmethod caltime-equalp ((t1 date) (t2 date))
   (and (= (day-of t1) (day-of t2))
        (= (month-of t1) (month-of t2))
        (= (year-of t1) (year-of t2))))
 
-(defmethod time-entity-equalp ((t1 datetime) (t2 datetime))
-  (and (time-entity-equalp (datetime-date t1)
+(defmethod caltime-equalp ((t1 datetime) (t2 datetime))
+  (and (caltime-equalp (datetime-date t1)
                          (datetime-date t2))
-       (time-entity-equalp (datetime-time t1)
+       (caltime-equalp (datetime-time t1)
                          (datetime-time t2))))
 
-(defmethod time-entity-equalp ((t1 zoned-datetime) (t2 zoned-datetime))
-  (and (time-entity-equalp (datetime-time t1) (datetime-time t2))
-       (time-entity-equalp (datetime-date t2) (datetime-date t2))
+(defmethod caltime-equalp ((t1 zoned-datetime) (t2 zoned-datetime))
+  (and (caltime-equalp (datetime-time t1) (datetime-time t2))
+       (caltime-equalp (datetime-date t2) (datetime-date t2))
        (equalp (timezone-of t1) (timezone-of t2))))
 
-(defun time-entity= (t1 t2)
-  "Returns T when the time-entities represent the same point in time."
-  (local-time:timestamp= (time-entity->local-time t1)
-                         (time-entity->local-time t2)))
+(defun caltime= (t1 t2)
+  "Returns T when the caltimes represent the same point in time."
+  (local-time:timestamp= (caltime->local-time t1)
+                         (caltime->local-time t2)))
 
-(defun time-entity> (t1 t2)
-  (local-time:timestamp> (time-entity->local-time t1)
-                         (time-entity->local-time t2)))
+(defun caltime> (t1 t2)
+  (local-time:timestamp> (caltime->local-time t1)
+                         (caltime->local-time t2)))
 
-(defun time-entity>= (t1 t2)
-  (local-time:timestamp>= (time-entity->local-time t1)
-                          (time-entity->local-time t2)))
+(defun caltime>= (t1 t2)
+  (local-time:timestamp>= (caltime->local-time t1)
+                          (caltime->local-time t2)))
 
-(defun time-entity< (t1 t2)
-  (local-time:timestamp< (time-entity->local-time t1)
-                         (time-entity->local-time t2)))
+(defun caltime< (t1 t2)
+  (local-time:timestamp< (caltime->local-time t1)
+                         (caltime->local-time t2)))
 
-(defun time-entity<= (t1 t2)
-  (local-time:timestamp<= (time-entity->local-time t1)
-                          (time-entity->local-time t2)))
+(defun caltime<= (t1 t2)
+  (local-time:timestamp<= (caltime->local-time t1)
+                          (caltime->local-time t2)))
 
 ;; ** Parsing
 
@@ -920,7 +921,7 @@ represent the same point in time."))
 
 (defgeneric parse-timestring (timestring class &rest args)
   (:documentation "Parse TIMESTRING and return an instance of CLASS.
-CLASS should be the class name of one of the subclasses of TIME-ENTITY."))
+CLASS should be the class name of one of the subclasses of CALTIME."))
 
 (defmethod parse-timestring ((timestring string) (class (eql 'date)) &rest args)
   (declare (ignore args))

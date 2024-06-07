@@ -2,9 +2,77 @@
 
 CALENDAR-TIMES is a calendar time library implemented on top of LOCAL-TIME library.
 
-It features zoned time-entities and calculations.
+It features zoned calendar times and calculations.
 
 ## Functions
+### caltime->universal-time
+
+```lisp
+(caltime)
+```
+
+Convert CALTIME to UNIVERSAL-TIME.
+
+
+
+
+### caltime-adjust
+
+```lisp
+(caltime &rest changes)
+```
+
+
+### caltime<
+
+```lisp
+(t1 t2)
+```
+
+
+### caltime<=
+
+```lisp
+(t1 t2)
+```
+
+
+### caltime=
+
+```lisp
+(t1 t2)
+```
+
+Returns T when the caltimes represent the same point in time.
+
+
+
+
+### caltime>
+
+```lisp
+(t1 t2)
+```
+
+
+### caltime>=
+
+```lisp
+(t1 t2)
+```
+
+
+### caltimes-compose
+
+```lisp
+(t1 t2 &rest more)
+```
+
+Compose caltimes.
+
+
+
+For example, a date + a time = datetime; a date-time + timezone = zoned-datetime..
 ### datetime-date
 
 ```lisp
@@ -30,10 +98,10 @@ Returns the WALLTIME of DATETIME.
 ### day-of-week
 
 ```lisp
-(time-entity &optional (format :number))
+(caltime &optional (format :number))
 ```
 
-Return day of week of TIME-ENTITY.
+Return day of week of CALTIME.
 FORMAT can be either :NUMBER (default) or :NAME.
 
 
@@ -106,74 +174,6 @@ The ZONED-DATETIME now.
 
 
 
-### time-entities-compose
-
-```lisp
-(t1 t2 &rest more)
-```
-
-Compose time-entities.
-
-
-
-For example, a date + a time = datetime; a date-time + timezone = zoned-datetime..
-### time-entity->universal-time
-
-```lisp
-(time-entity)
-```
-
-Convert TIME-ENTITY to UNIVERSAL-TIME.
-
-
-
-
-### time-entity-adjust
-
-```lisp
-(time-entity &rest changes)
-```
-
-
-### time-entity<
-
-```lisp
-(t1 t2)
-```
-
-
-### time-entity<=
-
-```lisp
-(t1 t2)
-```
-
-
-### time-entity=
-
-```lisp
-(t1 t2)
-```
-
-Returns T when the time-entities represent the same point in time.
-
-
-
-
-### time-entity>
-
-```lisp
-(t1 t2)
-```
-
-
-### time-entity>=
-
-```lisp
-(t1 t2)
-```
-
-
 ### time-now
 
 ```lisp
@@ -197,32 +197,99 @@ Returns DATE today.
 
 
 ## Generic-Functions
-### clone-time-entity
+### caltime+
 
 ```lisp
-(time-entity &rest args)
+(caltime amount unit &rest more)
 ```
 
 
-### decode-time-entity
+### caltime-
 
 ```lisp
-(time-entity)
+(caltime amount unit &rest more)
 ```
 
-Decode a TIME-ENTITY parts and return them with VALUES.
+Return a new caltime from CALTIME reduced in AMOUNT UNITs.
+Example:
+(caltime- (now) 2 :day)
+
+
+
+
+### caltime->local-time
+
+```lisp
+(caltime)
+```
+
+Generic caltime to local-time conversion.
+
+
+
+
+### caltime-coerce
+
+```lisp
+(caltime class &rest args)
+```
+
+Convert between different classes of time types.
+
+
+
+
+### caltime-difference
+
+```lisp
+(t1 t2 &optional unit)
+```
+
+Difference between caltimes, in UNITs.
+
+
+
+
+### caltime-equalp
+
+```lisp
+(t1 t2)
+```
+
+Compare caltimes for equality.
+This is a structural equality comparison. So, two caltimes that represent
+the same point in time, but differ in one of its elements (for instance, its timezone), are considered different. Use CALTIME= for equality for caltimes that
+represent the same point in time.
+
+
+
+
+### clone-caltime
+
+```lisp
+(caltime &rest args)
+```
+
+
+### decode-caltime
+
+```lisp
+(caltime)
+```
+
+Decode a CALTIME parts and return them with VALUES.
 The order of the list of values is the same as passed to the constructor functions.
 
 
 
 
-### format-time-entity
+### format-caltime
 
 ```lisp
-(destination time-entity &optional format &rest args)
+(destination caltime &optional format &rest args)
 ```
 
-Format TIME-ENTITY.
+Format CALTIME.
 Destination can be T, then timestring is written to *STANDARD-OUTPUT*;
 can be NIL, then a string is returned;
 or can be a stream.
@@ -237,74 +304,7 @@ or can be a stream.
 ```
 
 Parse TIMESTRING and return an instance of CLASS.
-CLASS should be the class name of one of the subclasses of TIME-ENTITY.
-
-
-
-
-### time-entity+
-
-```lisp
-(time-entity amount unit &rest more)
-```
-
-
-### time-entity-
-
-```lisp
-(time-entity amount unit &rest more)
-```
-
-Return a new time-entity from TIME-ENTITY reduced in AMOUNT UNITs.
-Example:
-(time-entity- (now) 2 :day)
-
-
-
-
-### time-entity->local-time
-
-```lisp
-(time-entity)
-```
-
-Generic time-entity to local-time conversion.
-
-
-
-
-### time-entity-coerce
-
-```lisp
-(time-entity class &rest args)
-```
-
-Convert between different classes of time types.
-
-
-
-
-### time-entity-difference
-
-```lisp
-(t1 t2 &optional unit)
-```
-
-Difference between time-entities, in UNITs.
-
-
-
-
-### time-entity-equalp
-
-```lisp
-(t1 t2)
-```
-
-Compare time-entities for equality.
-This is a structural equality comparison. So, two time-entities that represent
-the same point in time, but differ in one of its elements (for instance, its timezone), are considered different. Use TIME-ENTITY= for equality for time-entities that
-represent the same point in time.
+CLASS should be the class name of one of the subclasses of CALTIME.
 
 
 
@@ -320,14 +320,14 @@ Timezone can be a LOCAL-TIME::TIMEZONE object, or an offset.
 
 ### year-of
 ## Classes
+### caltime
+Abstract caltime class
+
 ### date
 A date like 2024-01-01
 
 ### datetime
 A datetime like 2024-01-01T00:00:00
-
-### time-entity
-Abstract time-entity class
 
 ### walltime
 Represents a 'wall' time. Like 01:01:22

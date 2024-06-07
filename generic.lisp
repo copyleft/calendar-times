@@ -6,8 +6,8 @@
 
 (in-package :calendar-times-generic)
 
-(defmethod gcl:add ((time-entity local-time:timestamp) (measure calendar:time-measure))
-  (local-time:timestamp+ time-entity
+(defmethod gcl:add ((caltime local-time:timestamp) (measure calendar:time-measure))
+  (local-time:timestamp+ caltime
                          (time-measure-value measure)
                          (time-measure-unit measure)))
 
@@ -16,8 +16,8 @@
 
 (gcl:+ (local-time:now) (make-time-measure 2 :year))
 
-(defmethod gcl:add ((time-entity calendar-times:time-entity) (measure calendar:time-measure))
-  (calendar-times:time-entity+ time-entity (time-measure-value measure)
+(defmethod gcl:add ((caltime calendar-times:caltime) (measure calendar:time-measure))
+  (calendar-times:caltime+ caltime (time-measure-value measure)
                       (time-measure-unit measure)))
 
 (gcl:+ (calendar-times::today) (make-time-measure 2 :year))
@@ -30,5 +30,5 @@
 (defmethod generic-cl:subtract ((a local-time:timestamp) (b local-time:timestamp))
   (local-time:timestamp-difference a b))
 
-(defmethod generic-cl:subtract ((a calendar-times:time-entity) (b calendar-times:time-entity))
-  (calendar-times::time-entity-difference a b))
+(defmethod generic-cl:subtract ((a calendar-times:caltime) (b calendar-times:caltime))
+  (calendar-times::caltime-difference a b))
