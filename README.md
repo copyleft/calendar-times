@@ -256,7 +256,7 @@ Difference between caltimes, in UNITs.
 (t1 t2)
 ```
 
-Compare caltimes for equality.
+Compare calendar times for equality.
 This is a structural equality comparison. So, two caltimes that represent
 the same point in time, but differ in one of its elements (for instance, its timezone), are considered different. Use CALTIME= for equality for caltimes that
 represent the same point in time.
@@ -321,7 +321,7 @@ Timezone can be a LOCAL-TIME::TIMEZONE object, or an offset.
 ### year-of
 ## Classes
 ### caltime
-Abstract caltime class
+Abstract calendar time class
 
 ### date
 A date like 2024-01-01

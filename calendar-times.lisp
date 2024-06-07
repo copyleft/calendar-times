@@ -91,11 +91,11 @@ It features zoned calendar times and calculations."))
 (defconstant +seconds-per-minute+ 60)
 (defvar +day-names+ #(:sunday :monday :tuesday :wednesday :thursday :friday :saturday))
 
-;; ** Caltime classes
+;; ** Calendar Time classes
 
 (defclass caltime ()
   ()
-  (:documentation "Abstract caltime class"))
+  (:documentation "Abstract calendar time class"))
 
 (defclass walltime (caltime)
   ((hour :reader hour-of
@@ -121,7 +121,7 @@ It features zoned calendar times and calculations."))
              :initform local-time:+utc-zone+
              :type (or local-time::timezone integer)
              :documentation "Timezone can be a LOCAL-TIME::TIMEZONE object, or an offset."))
-  (:documentation "A caltime with timezone. Abstract class."))
+  (:documentation "A calendar time with timezone. Abstract class."))
 
 (defclass zoned-datetime (datetime zoned-caltime)
   ()
@@ -286,7 +286,7 @@ The order of the list of values is the same as passed to the constructor functio
    (caltime->local-time caltime)))
 
 (defun time->local-time (caltime)
-  "Convert WALLTIME to CALTIME."
+  "Convert WALLTIME to LOCAL-TIME:TIMESTAMP."
   (local-time:encode-timestamp
    0
    (seconds-of caltime)
@@ -473,19 +473,6 @@ or can be a stream."))
    (date->local-time caltime)
    ;;:timezone (timezone-of caltime)
    :format format))
-
-;; (defparameter +zoned-date-format+ "%F %z")
-
-;; (defmethod format-caltime (destination (caltime zoned-date) &rest args)
-;;   (cl-strftime:format-time
-;;    destination
-;;    +zoned-date-format+
-;;    (caltime->universal-time caltime)
-;;    (etypecase (timezone-of caltime)
-;;      (local-time::timezone
-;;       (timezone-of caltime))
-;;      (integer (local-time::%make-simple-timezone "offset" "OFFSET" (timezone-of caltime)))
-;;      )))
 
 (defmethod format-caltime (destination (caltime walltime) &optional (format +time-format+) &rest args)
   (declare (ignore args))
@@ -777,9 +764,9 @@ FORMAT can be either :NUMBER (default) or :NAME."
 #+test
 (let ((now (now)))
   (caltime-adjust now
-                    '(setf day 22)
-                    '(setf hour 00)
-                    ))
+                  '(setf day 22)
+                  '(setf hour 00)
+                  ))
 
 (defgeneric %caltimes-compose (t1 t2)
   (:method (t1 t2)
@@ -823,7 +810,7 @@ For example, a date + a time = datetime; a date-time + timezone = zoned-datetime
    (caltime->local-time t2)))
 
 (defgeneric caltime-equalp (t1 t2)
-  (:documentation "Compare caltimes for equality.
+  (:documentation "Compare calendar times for equality.
 This is a structural equality comparison. So, two caltimes that represent
 the same point in time, but differ in one of its elements (for instance, its timezone), are considered different. Use CALTIME= for equality for caltimes that
 represent the same point in time."))
@@ -843,9 +830,9 @@ represent the same point in time."))
 
 (defmethod caltime-equalp ((t1 datetime) (t2 datetime))
   (and (caltime-equalp (datetime-date t1)
-                         (datetime-date t2))
+                       (datetime-date t2))
        (caltime-equalp (datetime-time t1)
-                         (datetime-time t2))))
+                       (datetime-time t2))))
 
 (defmethod caltime-equalp ((t1 zoned-datetime) (t2 zoned-datetime))
   (and (caltime-equalp (datetime-time t1) (datetime-time t2))
