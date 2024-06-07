@@ -1,4 +1,4 @@
-(in-package :timelib)
+(in-package :calendar-times)
 
 (defclass time-entity ()
   ((internal-time-entity

@@ -1,7 +1,7 @@
-(fiasco:define-test-package :timelib-tests
-  (:use :timelib))
+(fiasco:define-test-package :calendar-times-tests
+  (:use :calendar-times))
 
-(in-package :timelib-tests)
+(in-package :calendar-times-tests)
 
 ;; (fiasco:all-tests) to run
 

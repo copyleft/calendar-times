@@ -1,4 +1,4 @@
-(defpackage :timelib
+(defpackage :calendar-times
   (:use :cl)
   (:export
    ;; classes
@@ -72,11 +72,11 @@
 
    ;; parsing
    #:parse-timestring)
-  (:documentation "TIMELIB is a calendar time library implemented on top of LOCAL-TIME library.
+  (:documentation "CALENDAR-TIMES is a calendar time library implemented on top of LOCAL-TIME library.
 
 It features zoned time-entities and calculations."))
 
-(in-package :timelib)
+(in-package :calendar-times)
 
 ;; ** Constants
 
