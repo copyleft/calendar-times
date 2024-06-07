@@ -1,6 +1,6 @@
-# TIMELIB
+# CALENDAR-TIMES
 
-TIMELIB is a calendar time library implemented on top of LOCAL-TIME library.
+CALENDAR-TIMES is a calendar time library implemented on top of LOCAL-TIME library.
 
 It features zoned time-entities and calculations.
 
