@@ -8,9 +8,30 @@
 (eval-when (:load-toplevel)
   (local-time:reread-timezone-repository))
 
+;; test that LOCAL-TIME library timezone calculations are in good shape:
+(deftest localtime-timezones-calc-test ()
+  ;; https://github.com/dlowe-net/local-time/issues/67
+  (let ((cet (local-time:find-timezone-by-location-name "Europe/Stockholm")))
+    (let ((t1 (local-time:encode-timestamp 0 0 0 0 30 3 2014 :timezone cet))
+          (t2 (local-time:encode-timestamp 0 0 0 4 30 3 2014 :timezone cet))
+          (t3 (local-time:encode-timestamp 0 0 0 1 30 3 2014 :timezone cet)))
+      (is (local-time:timestamp= t1
+                                 (local-time:encode-timestamp 0 0 0 23 29 03 2014 :timezone local-time:+utc-zone+)) "CET is 1 hour ahead of UTC")
+      (is
+          (local-time:timestamp= t2
+                                 (local-time:encode-timestamp 0 0 0 02 30 03 2014 :timezone local-time:+utc-zone+))
+          "CET with daylight saving time is 2 hours head of UTC")
+      (is (local-time:timestamp= t3
+                                 (local-time:encode-timestamp 0 0 0 00 30 03 2014 :timezone local-time:+utc-zone+))
+          "daylight saving time transititon starts at 2"))
+
+    ;; https://github.com/dlowe-net/local-time/issues/47
+    (let ((t1 (local-time:encode-timestamp 0 0 0 4 30 3 2014 :timezone cet))
+          (t2 (local-time:encode-timestamp 0 0 0 1 30 3 2014 :timezone cet)))
+      (is (= (local-time:timestamp-difference t1 t2) 7200) "2 hours difference because of DST"))))
+
 ;; https://github.com/dlowe-net/local-time/issues/67
 ;; play with hour between 1 and 2 and observe timezone
-
 (deftest timezones-calc-test ()
   (let ((at-four (make-zoned-datetime 0 0 4 30 3 2014 "Europe/Stockholm"))
         (at-one (make-zoned-datetime 0 0 1 30 3 2014 "Europe/Stockholm")))
@@ -73,7 +94,7 @@
 (deftest coercion-tests ()
   (let ((dt (make-datetime 1 2 3 4 5 2024)))
     (is (caltime= (caltime-coerce dt 'date)
-                    (make-date 4 5 2024)))))
+                  (make-date 4 5 2024)))))
 
 (deftest validation-tests ()
   (signals error (make-time 0 0 -1))
@@ -97,26 +118,26 @@
     (is (typep time 'walltime))
     (is (caltime= time (make-time 22 00 01))))
   (let ((caltimes (list (make-time 0 1 2)
-                          (make-date 1 2 2000)
-                          (make-datetime 0 1 2 3 4 2005)
-                          (now "America/Argentina/Buenos_Aires")
-                          (now "Europe/Stockholm"))))
+                        (make-date 1 2 2000)
+                        (make-datetime 0 1 2 3 4 2005)
+                        (now "America/Argentina/Buenos_Aires")
+                        (now "Europe/Stockholm"))))
     (dolist (caltime caltimes)
       (is (caltime-equalp caltime
-                            (parse-timestring (format-caltime nil caltime)
-                                              (class-name (class-of caltime))))))))
+                          (parse-timestring (format-caltime nil caltime)
+                                            (class-name (class-of caltime))))))))
 
 (deftest decoding-tests ()
   (let ((date (today)))
     (is (caltime-equalp (apply #'make-date (multiple-value-list (decode-caltime date)))
-                          date)))
+                        date)))
   (let ((time (time-now)))
     (is (caltime-equalp (apply #'make-time (multiple-value-list (decode-caltime time)))
-                          time)))
+                        time)))
   (let ((datetime (caltime-coerce (now) 'datetime)))
     (is (caltime-equalp (apply #'make-datetime (multiple-value-list (decode-caltime datetime)))
-                          datetime)))
+                        datetime)))
 
   (let ((zdatetime (now)))
     (is (caltime-equalp (apply #'make-zoned-datetime (multiple-value-list (decode-caltime zdatetime)))
-                          zdatetime))))
+                        zdatetime))))
